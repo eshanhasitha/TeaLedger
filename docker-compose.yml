@@ -1,0 +1,21 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: tea-ledger-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: tea_ledger
+      POSTGRES_USER: tea_ledger
+      POSTGRES_PASSWORD: tea_ledger@123
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - tea_ledger_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  tea_ledger_postgres_data:

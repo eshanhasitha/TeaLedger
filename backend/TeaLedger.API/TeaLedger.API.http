@@ -1,0 +1,6 @@
+@TeaLedger.API_HostAddress = http://localhost:5252
+
+GET {{TeaLedger.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,70 @@
+# ==============================
+# TeaLedger .gitignore
+# ==============================
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET
+bin/
+obj/
+TestResults/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# React/Vite
+dist/
+.vite/
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+
+# Android
+.gradle/
+local.properties
+*.keystore
+*.jks
+
+# iOS
+Pods/
+DerivedData/
+*.xcworkspace/xcuserdata/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Database local files
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+coverage/
