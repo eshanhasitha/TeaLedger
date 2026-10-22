@@ -6,6 +6,8 @@ public class Farmer
 
     public Guid UserId { get; set; }
 
+    public Guid? CollectorId { get; set; }
+
     public string FarmerCode { get; set; } = string.Empty;
 
     public string? Address { get; set; }
@@ -14,5 +16,9 @@ public class Farmer
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public bool IsActive { get; set; } = true;
+
     public User User { get; set; } = null!;
+
+    public Collector Collector { get; set; } = null!;
 }

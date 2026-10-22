@@ -24,4 +24,8 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public Farmer? Farmer { get; set; }
+
+    public Collector? Collector { get; set; }
 }
