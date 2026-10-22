@@ -1,5 +1,13 @@
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using TeaLedger.API.Data;
+using TeaLedger.API.Data.Seeds;
+
+var envFile = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envFile))
+{
+    Env.Load(envFile);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +40,13 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DatabaseSeeder.SeedAsync(db, app.Configuration);
+}
+
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -43,5 +58,13 @@ app.UseCors("TeaLedgerPolicy");
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>();
+
+    await DatabaseSeeder.SeedAsync(db, app.Configuration);
+}
 
 app.Run();
