@@ -18,6 +18,7 @@
 bin/
 obj/
 TestResults/
+build-check/
 
 # Node
 node_modules/
@@ -60,6 +61,7 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Database local files
 *.db

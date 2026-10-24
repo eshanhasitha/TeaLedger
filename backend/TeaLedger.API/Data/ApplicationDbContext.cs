@@ -36,14 +36,25 @@ public class ApplicationDbContext : DbContext
             .HasIndex(x => x.CollectorCode)
             .IsUnique();
 
-        modelBuilder.Entity<Farmer>()
-            .HasOne(x => x.User)
-            .WithOne()
-            .HasForeignKey<Farmer>(x => x.UserId);
+         // User -> Farmer
+    modelBuilder.Entity<User>()
+        .HasOne(x => x.Farmer)
+        .WithOne(x => x.User)
+        .HasForeignKey<Farmer>(x => x.UserId)
+        .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Collector>()
-            .HasOne(x => x.User)
-            .WithOne()
-            .HasForeignKey<Collector>(x => x.UserId);
+    // User -> Collector
+    modelBuilder.Entity<User>()
+        .HasOne(x => x.Collector)
+        .WithOne(x => x.User)
+        .HasForeignKey<Collector>(x => x.UserId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    // Collector -> Farmers
+    modelBuilder.Entity<Collector>()
+        .HasMany(x => x.Farmers)
+        .WithOne(x => x.Collector)
+        .HasForeignKey(x => x.CollectorId)
+        .OnDelete(DeleteBehavior.Restrict);
     }
 }

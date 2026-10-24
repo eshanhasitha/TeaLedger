@@ -113,12 +113,18 @@ namespace TeaLedger.API.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("CollectorId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FarmerCode")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<decimal?>("TeaLandSize")
                         .HasColumnType("numeric");
@@ -127,6 +133,8 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CollectorId");
 
                     b.HasIndex("FarmerCode")
                         .IsUnique();
@@ -189,9 +197,9 @@ namespace TeaLedger.API.Migrations
             modelBuilder.Entity("TeaLedger.API.Models.Collector", b =>
                 {
                     b.HasOne("TeaLedger.API.Models.User", "User")
-                        .WithOne()
+                        .WithOne("Collector")
                         .HasForeignKey("TeaLedger.API.Models.Collector", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -199,13 +207,32 @@ namespace TeaLedger.API.Migrations
 
             modelBuilder.Entity("TeaLedger.API.Models.Farmer", b =>
                 {
+                    b.HasOne("TeaLedger.API.Models.Collector", "Collector")
+                        .WithMany("Farmers")
+                        .HasForeignKey("CollectorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TeaLedger.API.Models.User", "User")
-                        .WithOne()
+                        .WithOne("Farmer")
                         .HasForeignKey("TeaLedger.API.Models.Farmer", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Collector");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.Collector", b =>
+                {
+                    b.Navigation("Farmers");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.User", b =>
+                {
+                    b.Navigation("Collector");
+
+                    b.Navigation("Farmer");
                 });
 #pragma warning restore 612, 618
         }
