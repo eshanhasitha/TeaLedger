@@ -117,4 +117,44 @@ public sealed class AuthController : ControllerBase
             role
         });
     }
+
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var userIdValue = User.FindFirstValue(
+            JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authentication token."
+            });
+        }
+
+        var changed = await _authService.ChangePasswordAsync(
+            userId,
+            request,
+            cancellationToken);
+
+        if (!changed)
+        {
+            return BadRequest(new
+            {
+                message = "Current password is incorrect or the new password is invalid."
+            });
+        }
+
+        return Ok(new
+        {
+            message = "Password changed successfully."
+        });
+    }
 }

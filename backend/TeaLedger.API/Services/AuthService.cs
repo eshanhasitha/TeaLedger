@@ -166,6 +166,39 @@ public sealed class AuthService : IAuthService
         };
     }
 
+    public async Task<bool> ChangePasswordAsync(
+        Guid userId,
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+            string.IsNullOrWhiteSpace(request.NewPassword) ||
+            request.NewPassword != request.ConfirmNewPassword)
+        {
+            return false;
+        }
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(
+                x => x.Id == userId,
+                cancellationToken);
+
+        if (user is null || !user.IsActive ||
+            !_passwordService.VerifyPassword(
+                request.CurrentPassword,
+                user.PasswordHash))
+        {
+            return false;
+        }
+
+        user.PasswordHash = _passwordService.HashPassword(
+            request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private static string NormalizePhone(
         string phoneNumber)
     {
