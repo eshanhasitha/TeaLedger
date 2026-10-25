@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,6 @@ using TeaLedger.API.Data.Seeds;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Services;
 using Serilog;
-
 ApplicationConfiguration.LoadEnvironmentFile();
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +92,12 @@ builder.Services
         options =>
         {
             options.MapInboundClaims = false;
+
+            options.SaveToken = false;
+
+            options.RequireHttpsMetadata =
+                !builder.Environment.IsDevelopment();
+
             options.TokenValidationParameters =
                 new TokenValidationParameters
                 {
@@ -115,13 +121,14 @@ builder.Services
                     ValidateLifetime = true,
 
                     RequireExpirationTime = true,
+
                     RequireSignedTokens = true,
 
                     ClockSkew =
                         TimeSpan.FromMinutes(1),
 
                     NameClaimType =
-                        System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Name,
+                        JwtRegisteredClaimNames.Name,
 
                     RoleClaimType =
                         "role"
