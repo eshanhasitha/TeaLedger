@@ -1,0 +1,15 @@
+$kind: collection
+description: Local API requests for health, authentication, profile, and role dashboards.
+variables:
+  - key: json_web_token_0nej
+    secret: true
+    disabled: false
+  - key: json_web_token_19ny
+    secret: true
+    disabled: false
+auth:
+  - id: 0356ce15-490b-403b-9b3b-ea9724d3dffc
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{json_web_token_19ny}}"
