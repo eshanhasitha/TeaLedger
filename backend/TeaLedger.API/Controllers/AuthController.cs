@@ -14,10 +14,15 @@ public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(
+        IAuthService authService)
     {
         _authService = authService;
     }
+
+    // ---------------------------------------------------------
+    // POST: api/Auth/login
+    // ---------------------------------------------------------
 
     [AllowAnonymous]
     [HttpPost("login")]
@@ -27,50 +32,150 @@ public sealed class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return ValidationProblem(ModelState);
+            return ValidationProblem(
+                ModelState);
         }
 
-        var result = await _authService.LoginAsync(
-            request,
-            cancellationToken);
+        var result =
+            await _authService.LoginAsync(
+                request,
+                cancellationToken);
 
         if (result is null)
         {
             return Unauthorized(new
             {
-                message = "Invalid phone number or password."
+                message =
+                    "Invalid phone number or password."
             });
         }
 
         return Ok(result);
     }
 
+    // ---------------------------------------------------------
+    // POST: api/Auth/register
+    // ---------------------------------------------------------
+
+    [AllowAnonymous]
+    [HttpPost("register")]
+    public async Task<ActionResult<RegisterResponse>> Register(
+        [FromBody] RegisterRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(
+                ModelState);
+        }
+
+        try
+        {
+            var result =
+                await _authService.RegisterAsync(
+                    request,
+                    cancellationToken);
+
+            return StatusCode(
+                StatusCodes.Status201Created,
+                result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    // ---------------------------------------------------------
+    // GET: api/Auth/me
+    // ---------------------------------------------------------
+
     [Authorize]
     [HttpGet("me")]
-    public IActionResult Me()
+    public async Task<ActionResult<CurrentUserResponse>> Me(
+        CancellationToken cancellationToken)
     {
-        var userId =
-            User.FindFirstValue(
-                JwtRegisteredClaimNames.Sub);
+        var userIdValue = User.FindFirstValue(
+            JwtRegisteredClaimNames.Sub);
 
-        var name =
-            User.FindFirstValue(
-                JwtRegisteredClaimNames.Name);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authentication token."
+            });
+        }
 
-        var phone =
-            User.FindFirstValue(
-                "phone_number");
+        var user = await _authService.GetCurrentUserAsync(
+            userId,
+            cancellationToken);
 
-        var role =
-            User.FindFirstValue(
-                "role");
+        if (user is null)
+        {
+            return NotFound(new
+            {
+                message = "User not found."
+            });
+        }
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new
+            {
+                message = "User account is inactive."
+            });
+        }
+
+        return Ok(user);
+    }
+
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var userIdValue = User.FindFirstValue(
+            JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authentication token."
+            });
+        }
+
+        var changed = await _authService.ChangePasswordAsync(
+            userId,
+            request,
+            cancellationToken);
+
+        if (!changed)
+        {
+            return BadRequest(new
+            {
+                message = "Current password is incorrect or the new password is invalid."
+            });
+        }
 
         return Ok(new
         {
-            userId,
-            fullName = name,
-            phoneNumber = phone,
-            role
+            message = "Password changed successfully."
         });
     }
 }

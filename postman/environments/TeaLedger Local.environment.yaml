@@ -1,0 +1,20 @@
+name: TeaLedger Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:5252'
+  - key: phoneNumber
+    value: ''
+  - key: fullName
+    value: ''
+  - key: confirmPassword
+    value: ''
+  - key: password
+    value: ''
+  - key: accessToken
+    value: ''
+  - key: currentPassword
+    value: ''
+  - key: newPassword
+    value: ''
+  - key: confirmNewPassword
+    value: ''

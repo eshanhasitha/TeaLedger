@@ -39,6 +39,12 @@ public sealed class JwtService : IJwtTokenService
             throw new InvalidOperationException(
                 "JWT audience is not configured.");
         }
+
+        if (_settings.ExpiresInMinutes <= 0)
+        {
+            throw new InvalidOperationException(
+                "JWT expiration must be greater than zero.");
+        }
     }
 
     public DateTime GetExpirationTime()
@@ -70,8 +76,11 @@ public sealed class JwtService : IJwtTokenService
                 user.Role.ToString())
         };
 
+        var keyBytes = Encoding.UTF8.GetBytes(
+            _settings.Key);
+
         var securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_settings.Key));
+            keyBytes);
 
         var credentials = new SigningCredentials(
             securityKey,
@@ -79,9 +88,16 @@ public sealed class JwtService : IJwtTokenService
 
         var utcExpiresAt = expiresAt.Kind switch
         {
-            DateTimeKind.Utc => expiresAt,
-            DateTimeKind.Local => expiresAt.ToUniversalTime(),
-            _ => DateTime.SpecifyKind(expiresAt, DateTimeKind.Utc)
+            DateTimeKind.Utc =>
+                expiresAt,
+
+            DateTimeKind.Local =>
+                expiresAt.ToUniversalTime(),
+
+            _ =>
+                DateTime.SpecifyKind(
+                    expiresAt,
+                    DateTimeKind.Utc)
         };
 
         if (utcExpiresAt <= DateTime.UtcNow)

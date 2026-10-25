@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "{{fullName}}",
+      "phoneNumber": "{{phoneNumber}}",
+      "password": "{{password}}",
+      "confirmPassword": "{{confirmPassword}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Registration creates a farmer account", function () {
+          pm.response.to.have.status(201);
+          pm.expect(pm.response.json().role).to.eql("Farmer");
+      });
+order: 1500

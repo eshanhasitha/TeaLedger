@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "phoneNumber": "{{phoneNumber}}",
+      "password": "{{password}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 200) {
+          const body = pm.response.json();
+          if (body.accessToken) {
+              pm.environment.set("accessToken", body.accessToken);
+          }
+      }
+      pm.test("Login returns an access token", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json().accessToken).to.be.a("string").and.not.empty;
+      });
+order: 1000
