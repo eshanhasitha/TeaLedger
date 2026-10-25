@@ -118,6 +118,12 @@ public sealed class AuthService : IAuthService
                 "Password is required.");
         }
 
+        if (!_passwordService.IsValidPassword(request.Password))
+        {
+            throw new ArgumentException(
+                "Password must be between 8 and 100 characters.");
+        }
+
         if (request.Password != request.ConfirmPassword)
         {
             throw new ArgumentException(
@@ -172,7 +178,7 @@ public sealed class AuthService : IAuthService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
-            string.IsNullOrWhiteSpace(request.NewPassword) ||
+            !_passwordService.IsValidPassword(request.NewPassword) ||
             request.NewPassword != request.ConfirmNewPassword)
         {
             return false;
