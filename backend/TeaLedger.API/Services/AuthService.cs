@@ -205,6 +205,31 @@ public sealed class AuthService : IAuthService
         return true;
     }
 
+    public async Task<CurrentUserResponse?> GetCurrentUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.Id == userId,
+                cancellationToken);
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        return new CurrentUserResponse
+        {
+            UserId = user.Id,
+            FullName = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            Role = user.Role.ToString(),
+            IsActive = user.IsActive
+        };
+    }
+
     private static string NormalizePhone(
         string phoneNumber)
     {

@@ -102,20 +102,41 @@ public sealed class AuthController : ControllerBase
 
     [Authorize]
     [HttpGet("me")]
-    public IActionResult Me()
+    public async Task<ActionResult<CurrentUserResponse>> Me(
+        CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        var name = User.FindFirstValue(JwtRegisteredClaimNames.Name);
-        var phone = User.FindFirstValue("phone_number");
-        var role = User.FindFirstValue("role");
+        var userIdValue = User.FindFirstValue(
+            JwtRegisteredClaimNames.Sub);
 
-        return Ok(new
+        if (!Guid.TryParse(userIdValue, out var userId))
         {
+            return Unauthorized(new
+            {
+                message = "Invalid authentication token."
+            });
+        }
+
+        var user = await _authService.GetCurrentUserAsync(
             userId,
-            fullName = name,
-            phoneNumber = phone,
-            role
-        });
+            cancellationToken);
+
+        if (user is null)
+        {
+            return NotFound(new
+            {
+                message = "User not found."
+            });
+        }
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new
+            {
+                message = "User account is inactive."
+            });
+        }
+
+        return Ok(user);
     }
 
     [HttpPost("change-password")]
