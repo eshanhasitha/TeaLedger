@@ -167,6 +167,10 @@ builder.Services.AddScoped<
     AuthService>();
 builder.Services.AddHostedService<DatabaseSeedHostedService>();
 
+builder.Services.AddScoped<
+    IUserManagementService,
+    UserManagementService>();
+
 builder.Services.AddCors(
     options =>
     {
