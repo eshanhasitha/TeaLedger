@@ -171,6 +171,8 @@ builder.Services.AddScoped<
     IUserManagementService,
     UserManagementService>();
 
+builder.Services.AddScoped<IFarmerService, FarmerService>();
+
 builder.Services.AddCors(
     options =>
     {
