@@ -173,6 +173,10 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<IFarmerService, FarmerService>();
 
+builder.Services.AddScoped<
+    ICollectorService,
+    CollectorService>();
+
 builder.Services.AddCors(
     options =>
     {
