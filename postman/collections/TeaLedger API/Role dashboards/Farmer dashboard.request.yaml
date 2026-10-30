@@ -1,4 +1,6 @@
 $kind: http-request
 url: "{{baseUrl}}/api/farmer/dashboard"
 method: GET
+auth:
+  type: inherit
 order: 3000

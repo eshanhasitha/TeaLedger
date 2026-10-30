@@ -11,6 +11,7 @@ using TeaLedger.API.Data.Seeds;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Services;
 using Serilog;
+using TeaLedger.API.Middleware;
 ApplicationConfiguration.LoadEnvironmentFile();
 var builder = WebApplication.CreateBuilder(args);
 
@@ -199,10 +200,29 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var db = scope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>();
+
+    var logger = scope.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("DevelopmentDatabaseInitializer");
+
+    await DevelopmentDatabaseInitializer.InitializeAsync(db, logger);
+}
+
+
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 app.UseCors("TeaLedgerPolicy");
+app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program { }

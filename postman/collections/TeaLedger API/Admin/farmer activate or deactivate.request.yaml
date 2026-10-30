@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/farmers/{{farmerId}}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "isActive": {{isActive}}
+    }
+auth:
+  type: inherit
+order: 4000

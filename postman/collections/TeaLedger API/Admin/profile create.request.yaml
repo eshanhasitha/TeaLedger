@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/farmers"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "userId": "{{userId}}",
+      "farmerCode": "{{farmerCode}}",
+      "address": "{{address}}",
+      "farmSizeHectares": {{farmSizeHectares}}
+    }
+auth:
+  type: inherit
+order: 1000
