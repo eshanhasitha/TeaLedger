@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/users/{{userId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "{{fullName}}",
+      "phoneNumber": "{{phoneNumber}}"
+    }
+auth:
+  type: inherit
+order: 5000

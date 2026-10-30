@@ -1,4 +1,6 @@
 $kind: http-request
 url: "{{baseUrl}}/api/auth/me"
 method: GET
+auth:
+  type: inherit
 order: 2000

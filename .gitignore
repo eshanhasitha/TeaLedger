@@ -19,6 +19,7 @@ bin/
 obj/
 TestResults/
 build-check/
+_build_check/
 
 # Node
 node_modules/

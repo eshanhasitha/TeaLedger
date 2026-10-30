@@ -1,4 +1,6 @@
 $kind: http-request
 url: "{{baseUrl}}/api/admin/dashboard"
 method: GET
+auth:
+  type: inherit
 order: 1000
