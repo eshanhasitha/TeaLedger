@@ -12,6 +12,7 @@ using TeaLedger.API.Interfaces;
 using TeaLedger.API.Services;
 using Serilog;
 using TeaLedger.API.Middleware;
+using TeaLedger.API.Repositories;
 ApplicationConfiguration.LoadEnvironmentFile();
 var builder = WebApplication.CreateBuilder(args);
 
@@ -173,6 +174,14 @@ builder.Services.AddScoped<
     UserManagementService>();
 
 builder.Services.AddScoped<IFarmerService, FarmerService>();
+
+builder.Services.AddScoped<
+    IFarmerRepository,
+    FarmerRepository>();
+
+builder.Services.AddScoped<
+    IFarmerService,
+    FarmerService>();
 
 builder.Services.AddScoped<
     ICollectorService,
