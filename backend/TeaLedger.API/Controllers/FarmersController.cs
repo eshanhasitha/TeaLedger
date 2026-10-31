@@ -28,14 +28,21 @@ public class FarmersController : ControllerBase
         [FromQuery] bool? isActive = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _farmerService.GetFarmersAsync(
-            page,
-            pageSize,
-            search,
-            isActive,
-            cancellationToken);
+        try
+        {
+            var result = await _farmerService.GetFarmersAsync(
+                page,
+                pageSize,
+                search,
+                isActive,
+                cancellationToken);
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // GET: /api/admin/farmers/{id}
@@ -80,6 +87,10 @@ public class FarmersController : ControllerBase
         {
             return Conflict(new { message = ex.Message });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // PUT: /api/admin/farmers/{id}
@@ -109,6 +120,10 @@ public class FarmersController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 
