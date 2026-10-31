@@ -1,3 +1,4 @@
+
 namespace TeaLedger.API.Models;
 
 public class Farmer
@@ -20,5 +21,5 @@ public class Farmer
 
     public User User { get; set; } = null!;
 
-    public Collector Collector { get; set; } = null!;
+    public Collector? Collector { get; set; }
 }

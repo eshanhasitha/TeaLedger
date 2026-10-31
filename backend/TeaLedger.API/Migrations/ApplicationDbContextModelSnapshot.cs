@@ -134,13 +134,13 @@ namespace TeaLedger.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CollectorId");
-
                     b.HasIndex("FarmerCode")
                         .IsUnique();
 
                     b.HasIndex("UserId")
                         .IsUnique();
+
+                    b.HasIndex("CollectorId", "IsActive");
 
                     b.ToTable("Farmers");
                 });

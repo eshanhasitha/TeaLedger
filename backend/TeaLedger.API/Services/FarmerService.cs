@@ -1,5 +1,3 @@
-
-using Microsoft.EntityFrameworkCore;
 using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Farmers;
 using TeaLedger.API.Interfaces;
@@ -7,74 +5,35 @@ using TeaLedger.API.Models;
 
 namespace TeaLedger.API.Services;
 
-public class FarmerService : IFarmerService
+public sealed class FarmerService : IFarmerService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IFarmerRepository _repository;
 
-    public FarmerService(ApplicationDbContext db)
+    public FarmerService(IFarmerRepository repository)
     {
-        _db = db;
+        _repository = repository;
     }
 
-    public async Task<FarmerListResponse> GetFarmersAsync(
+    // ---------------- ADMIN OPERATIONS ----------------
+
+    public Task<FarmerListResponse> GetFarmersAsync(
         int page,
         int pageSize,
         string? search,
         bool? isActive,
         CancellationToken cancellationToken = default)
     {
-        page = Math.Max(page, 1);
-        pageSize = Math.Clamp(pageSize, 1, 100);
-
-        IQueryable<Farmer> query = _db.Farmers
-            .AsNoTracking()
-            .Include(f => f.User);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            string term = search.Trim().ToLower();
-
-            query = query.Where(f =>
-                f.FarmerCode.ToLower().Contains(term) ||
-                (f.Address != null && f.Address.ToLower().Contains(term)) ||
-                f.User.FullName.ToLower().Contains(term) ||
-                f.User.PhoneNumber.Contains(term));
-        }
-
-        if (isActive.HasValue)
-        {
-            query = query.Where(f => f.IsActive == isActive.Value);
-        }
-
-        int totalCount = await query.CountAsync(cancellationToken);
-
-        var farmers = await query
-            .OrderBy(f => f.User.FullName)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return new FarmerListResponse
-        {
-            Items = farmers.Select(MapToResponse).ToList(),
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = (int)Math.Ceiling(
-                totalCount / (double)pageSize)
-        };
+        return GetPagedResponseAsync(
+            page, pageSize, search, isActive, null,
+            cancellationToken);
     }
 
     public async Task<FarmerResponse?> GetFarmerByIdAsync(
         Guid farmerId,
         CancellationToken cancellationToken = default)
     {
-        var farmer = await _db.Farmers
-            .AsNoTracking()
-            .Include(f => f.User)
-            .FirstOrDefaultAsync(
-                f => f.Id == farmerId,
-                cancellationToken);
+        var farmer = await _repository.GetByIdAsync(
+            farmerId, null, false, cancellationToken);
 
         return farmer is null ? null : MapToResponse(farmer);
     }
@@ -83,59 +42,18 @@ public class FarmerService : IFarmerService
         CreateFarmerRequest request,
         CancellationToken cancellationToken = default)
     {
-        string farmerCode = NormalizeFarmerCode(request.FarmerCode);
+        var collectorId = request.CollectorId;
 
-        bool userExists = await _db.Users
-            .AnyAsync(u => u.Id == request.UserId, cancellationToken);
-
-        if (!userExists)
+        if (collectorId.HasValue &&
+            !await _repository.CollectorExistsAsync(
+                collectorId.Value, cancellationToken))
         {
-            throw new InvalidOperationException(
-                "The specified user account does not exist.");
+            throw new ArgumentException(
+                "The selected collector does not exist.");
         }
 
-        bool alreadyHasProfile = await _db.Farmers
-            .AnyAsync(
-                f => f.UserId == request.UserId,
-                cancellationToken);
-
-        if (alreadyHasProfile)
-        {
-            throw new InvalidOperationException(
-                "This user already has a farmer profile.");
-        }
-
-        bool farmerCodeExists = await _db.Farmers
-            .AnyAsync(
-                f => f.FarmerCode.ToLower() == farmerCode.ToLower(),
-                cancellationToken);
-
-        if (farmerCodeExists)
-        {
-            throw new InvalidOperationException(
-                "A farmer profile with this code already exists.");
-        }
-
-        var farmer = new Farmer
-        {
-            Id = Guid.NewGuid(),
-            UserId = request.UserId,
-            FarmerCode = farmerCode,
-            Address = request.Address.Trim(),
-            TeaLandSize = request.FarmSizeHectares,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _db.Farmers.Add(farmer);
-
-        await _db.SaveChangesAsync(cancellationToken);
-
-        await _db.Entry(farmer)
-            .Reference(f => f.User)
-            .LoadAsync(cancellationToken);
-
-        return MapToResponse(farmer);
+        return await CreateCoreAsync(
+            request, collectorId, cancellationToken);
     }
 
     public async Task<FarmerResponse?> UpdateFarmerAsync(
@@ -143,38 +61,8 @@ public class FarmerService : IFarmerService
         UpdateFarmerRequest request,
         CancellationToken cancellationToken = default)
     {
-        var farmer = await _db.Farmers
-            .Include(f => f.User)
-            .FirstOrDefaultAsync(
-                f => f.Id == farmerId,
-                cancellationToken);
-
-        if (farmer is null)
-        {
-            return null;
-        }
-
-        string farmerCode = NormalizeFarmerCode(request.FarmerCode);
-
-        bool farmerCodeExists = await _db.Farmers
-            .AnyAsync(
-                f => f.Id != farmerId &&
-                     f.FarmerCode.ToLower() == farmerCode.ToLower(),
-                cancellationToken);
-
-        if (farmerCodeExists)
-        {
-            throw new InvalidOperationException(
-                "Another farmer already uses this code.");
-        }
-
-        farmer.FarmerCode = farmerCode;
-        farmer.Address = request.Address.Trim();
-        farmer.TeaLandSize = request.FarmSizeHectares;
-
-        await _db.SaveChangesAsync(cancellationToken);
-
-        return MapToResponse(farmer);
+        return await UpdateCoreAsync(
+            farmerId, null, request, cancellationToken);
     }
 
     public async Task<bool> SetFarmerStatusAsync(
@@ -182,25 +70,251 @@ public class FarmerService : IFarmerService
         bool isActive,
         CancellationToken cancellationToken = default)
     {
-        var farmer = await _db.Farmers
-            .FirstOrDefaultAsync(
-                f => f.Id == farmerId,
-                cancellationToken);
+        return await SetStatusCoreAsync(
+            farmerId, null, isActive, cancellationToken);
+    }
 
-        if (farmer is null)
+    // ---------------- COLLECTOR OPERATIONS ----------------
+
+    public async Task<FarmerListResponse> GetCollectorFarmersAsync(
+        Guid collectorUserId,
+        int page,
+        int pageSize,
+        string? search,
+        bool? isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var collector = await GetCollectorAsync(
+            collectorUserId, cancellationToken);
+
+        return await GetPagedResponseAsync(
+            page, pageSize, search, isActive,
+            collector.Id, cancellationToken);
+    }
+
+    public async Task<FarmerResponse?> GetCollectorFarmerByIdAsync(
+        Guid collectorUserId,
+        Guid farmerId,
+        CancellationToken cancellationToken = default)
+    {
+        var collector = await GetCollectorAsync(
+            collectorUserId, cancellationToken);
+
+        var farmer = await _repository.GetByIdAsync(
+            farmerId, collector.Id, false, cancellationToken);
+
+        return farmer is null ? null : MapToResponse(farmer);
+    }
+
+    public async Task<FarmerResponse> CreateCollectorFarmerAsync(
+        Guid collectorUserId,
+        CreateFarmerRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var collector = await GetCollectorAsync(
+            collectorUserId, cancellationToken);
+
+        // Ignore request.CollectorId. The authenticated collector
+        // determines ownership; clients cannot assign another collector.
+        return await CreateCoreAsync(
+            request, collector.Id, cancellationToken);
+    }
+
+    public async Task<FarmerResponse?> UpdateCollectorFarmerAsync(
+        Guid collectorUserId,
+        Guid farmerId,
+        UpdateFarmerRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var collector = await GetCollectorAsync(
+            collectorUserId, cancellationToken);
+
+        return await UpdateCoreAsync(
+            farmerId, collector.Id, request, cancellationToken);
+    }
+
+    public async Task<bool> SetCollectorFarmerStatusAsync(
+        Guid collectorUserId,
+        Guid farmerId,
+        bool isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var collector = await GetCollectorAsync(
+            collectorUserId, cancellationToken);
+
+        return await SetStatusCoreAsync(
+            farmerId, collector.Id, isActive, cancellationToken);
+    }
+
+    // ---------------- SHARED BUSINESS LOGIC ----------------
+
+    private async Task<Collector> GetCollectorAsync(
+        Guid collectorUserId,
+        CancellationToken cancellationToken)
+    {
+        var collector = await _repository.GetCollectorByUserIdAsync(
+            collectorUserId, cancellationToken);
+
+        if (collector is null)
         {
-            return false;
+            throw new UnauthorizedAccessException(
+                "The authenticated account is not a registered collector.");
         }
 
+        return collector;
+    }
+
+    private async Task<FarmerListResponse> GetPagedResponseAsync(
+        int page,
+        int pageSize,
+        string? search,
+        bool? isActive,
+        Guid? collectorId,
+        CancellationToken cancellationToken)
+    {
+        if (page < 1)
+            throw new ArgumentException("Page must be at least 1.");
+
+        if (pageSize < 1 || pageSize > 100)
+            throw new ArgumentException(
+                "Page size must be between 1 and 100.");
+
+        var result = await _repository.GetPagedAsync(
+            page, pageSize, search, isActive,
+            collectorId, cancellationToken);
+
+        return new FarmerListResponse
+        {
+            Items = result.Items.Select(MapToResponse).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = result.TotalCount,
+            TotalPages = (int)Math.Ceiling(
+                result.TotalCount / (double)pageSize)
+        };
+    }
+
+    private async Task<FarmerResponse> CreateCoreAsync(
+        CreateFarmerRequest request,
+        Guid? collectorId,
+        CancellationToken cancellationToken)
+    {
+        if (request.UserId == Guid.Empty)
+            throw new ArgumentException("A valid UserId is required.");
+
+        var user = await _repository.GetUserAsync(
+            request.UserId, cancellationToken);
+
+        if (user is null)
+            throw new ArgumentException(
+                "The selected user does not exist.");
+
+        if (user.Role != UserRole.Farmer)
+            throw new ArgumentException(
+                "The selected user must have the Farmer role.");
+
+        if (!user.IsActive)
+            throw new ArgumentException(
+                "The selected farmer account is inactive.");
+
+        if (await _repository.UserHasFarmerProfileAsync(
+            request.UserId, cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "This user already has a farmer profile.");
+        }
+
+        var farmerCode = NormalizeFarmerCode(request.FarmerCode);
+
+        if (await _repository.FarmerCodeExistsAsync(
+            farmerCode, null, cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "This farmer code is already registered.");
+        }
+
+        var farmer = new Farmer
+        {
+            Id = Guid.NewGuid(),
+            UserId = request.UserId,
+            CollectorId = collectorId,
+            FarmerCode = farmerCode,
+            Address = request.Address.Trim(),
+            TeaLandSize = request.FarmSizeHectares,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _repository.AddAsync(farmer, cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        var savedFarmer = await _repository.GetByIdAsync(
+            farmer.Id, null, false, cancellationToken);
+
+        return MapToResponse(savedFarmer!);
+    }
+
+    private async Task<FarmerResponse?> UpdateCoreAsync(
+        Guid farmerId,
+        Guid? collectorId,
+        UpdateFarmerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var farmer = await _repository.GetByIdAsync(
+            farmerId, collectorId, true, cancellationToken);
+
+        if (farmer is null)
+            return null;
+
+        var farmerCode = NormalizeFarmerCode(request.FarmerCode);
+
+        if (await _repository.FarmerCodeExistsAsync(
+            farmerCode, farmerId, cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "Another farmer already uses this farmer code.");
+        }
+
+        farmer.FarmerCode = farmerCode;
+        farmer.Address = request.Address.Trim();
+        farmer.TeaLandSize = request.FarmSizeHectares;
+
+        farmer.User.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        return MapToResponse(farmer);
+    }
+
+    private async Task<bool> SetStatusCoreAsync(
+        Guid farmerId,
+        Guid? collectorId,
+        bool isActive,
+        CancellationToken cancellationToken)
+    {
+        var farmer = await _repository.GetByIdAsync(
+            farmerId, collectorId, true, cancellationToken);
+
+        if (farmer is null)
+            return false;
+
         farmer.IsActive = isActive;
-        await _db.SaveChangesAsync(cancellationToken);
+        farmer.User.IsActive = isActive;
+        farmer.User.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.SaveChangesAsync(cancellationToken);
 
         return true;
     }
 
-    private static string NormalizeFarmerCode(string farmerCode)
+    private static string NormalizeFarmerCode(string? value)
     {
-        return farmerCode.Trim().Replace(" ", string.Empty);
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException("Farmer code is required.");
+
+        return value.Trim()
+            .Replace(" ", string.Empty)
+            .ToUpperInvariant();
     }
 
     private static FarmerResponse MapToResponse(Farmer farmer)
@@ -216,7 +330,7 @@ public class FarmerService : IFarmerService
             FarmSizeHectares = farmer.TeaLandSize ?? 0,
             IsActive = farmer.IsActive,
             CreatedAt = farmer.CreatedAt,
-            UpdatedAt = null
+            UpdatedAt = farmer.User.UpdatedAt
         };
     }
 }

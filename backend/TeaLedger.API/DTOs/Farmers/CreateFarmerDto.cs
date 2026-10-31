@@ -18,4 +18,8 @@ public class CreateFarmerRequest
 
     [Range(0.01, 100000)]
     public decimal FarmSizeHectares { get; set; }
+
+    // Used only by Admin.
+    // Collector assignment is determined from the JWT for Collectors.
+    public Guid? CollectorId { get; set; }
 }
