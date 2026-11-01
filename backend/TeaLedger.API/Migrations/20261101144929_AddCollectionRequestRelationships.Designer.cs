@@ -12,8 +12,8 @@ using TeaLedger.API.Data;
 namespace TeaLedger.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261101140524_AddTeaReadyRequestAndNotifications")]
-    partial class AddTeaReadyRequestAndNotifications
+    [Migration("20261101144929_AddCollectionRequestRelationships")]
+    partial class AddCollectionRequestRelationships
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -98,6 +98,9 @@ namespace TeaLedger.API.Migrations
                     b.Property<decimal>("PricePerKg")
                         .HasColumnType("numeric");
 
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -114,6 +117,9 @@ namespace TeaLedger.API.Migrations
 
                     b.HasIndex("FarmerId");
 
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
                     b.ToTable("Collections");
                 });
 
@@ -121,9 +127,6 @@ namespace TeaLedger.API.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CollectionId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("CollectorNote")
@@ -145,8 +148,6 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CollectionId");
 
                     b.HasIndex("FarmerId");
 
@@ -263,6 +264,23 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.PassbookEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId")
+                        .IsUnique();
+
+                    b.ToTable("PassbookEntries");
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -301,6 +319,23 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.WeightVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId")
+                        .IsUnique();
+
+                    b.ToTable("WeightVerifications");
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.Collection", b =>
                 {
                     b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
@@ -309,22 +344,24 @@ namespace TeaLedger.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TeaLedger.API.Models.CollectionRequest", "Request")
+                        .WithOne("Collection")
+                        .HasForeignKey("TeaLedger.API.Models.Collection", "RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Farmer");
+
+                    b.Navigation("Request");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.CollectionRequest", b =>
                 {
-                    b.HasOne("TeaLedger.API.Models.Collection", "Collection")
-                        .WithMany()
-                        .HasForeignKey("CollectionId");
-
                     b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
                         .WithMany()
                         .HasForeignKey("FarmerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Collection");
 
                     b.Navigation("Farmer");
                 });
@@ -367,6 +404,40 @@ namespace TeaLedger.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.PassbookEntry", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Collection", "Collection")
+                        .WithOne("PassbookEntry")
+                        .HasForeignKey("TeaLedger.API.Models.PassbookEntry", "CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.WeightVerification", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Collection", "Collection")
+                        .WithOne("WeightVerification")
+                        .HasForeignKey("TeaLedger.API.Models.WeightVerification", "CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.Collection", b =>
+                {
+                    b.Navigation("PassbookEntry");
+
+                    b.Navigation("WeightVerification");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.CollectionRequest", b =>
+                {
+                    b.Navigation("Collection");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Collector", b =>

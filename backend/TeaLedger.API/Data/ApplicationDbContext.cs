@@ -21,6 +21,10 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Collection> Collections => Set<Collection>();
 
+    public DbSet<WeightVerification> WeightVerifications => Set<WeightVerification>();
+
+    public DbSet<PassbookEntry> PassbookEntries => Set<PassbookEntry>();
+
     public DbSet<CollectionRequest> CollectionRequests => Set<CollectionRequest>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -59,6 +63,22 @@ public class ApplicationDbContext : DbContext
             .IsUnique();
         modelBuilder.Entity<Farmer>()
             .HasIndex(f => new { f.CollectorId, f.IsActive });
+
+        modelBuilder.Entity<Collection>()
+            .HasOne(x => x.Request)
+            .WithOne(x => x.Collection)
+            .HasForeignKey<Collection>(x => x.RequestId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Collection>()
+            .HasOne(x => x.WeightVerification)
+            .WithOne(x => x.Collection)
+            .HasForeignKey<WeightVerification>(x => x.CollectionId);
+
+        modelBuilder.Entity<Collection>()
+            .HasOne(x => x.PassbookEntry)
+            .WithOne(x => x.Collection)
+            .HasForeignKey<PassbookEntry>(x => x.CollectionId);
         
         modelBuilder.ApplyConfiguration(
             new CollectorConfiguration());
