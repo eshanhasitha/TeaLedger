@@ -30,8 +30,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
 
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
-    
-    
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
@@ -111,25 +109,175 @@ public class ApplicationDbContext : DbContext
             });
         });
 
+
+
          // User -> Farmer
-    modelBuilder.Entity<User>()
-        .HasOne(x => x.Farmer)
-        .WithOne(x => x.User)
-        .HasForeignKey<Farmer>(x => x.UserId)
-        .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<User>()
+            .HasOne(x => x.Farmer)
+            .WithOne(x => x.User)
+            .HasForeignKey<Farmer>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-    // User -> Collector
-    modelBuilder.Entity<User>()
-        .HasOne(x => x.Collector)
-        .WithOne(x => x.User)
-        .HasForeignKey<Collector>(x => x.UserId)
-        .OnDelete(DeleteBehavior.Restrict);
+        // User -> Collector
+        modelBuilder.Entity<User>()
+            .HasOne(x => x.Collector)
+            .WithOne(x => x.User)
+            .HasForeignKey<Collector>(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-    // Collector -> Farmers
-    modelBuilder.Entity<Collector>()
-        .HasMany(x => x.Farmers)
-        .WithOne(x => x.Collector)
-        .HasForeignKey(x => x.CollectorId)
-        .OnDelete(DeleteBehavior.Restrict);
+        // Collector -> Farmers
+        modelBuilder.Entity<Collector>()
+            .HasMany(x => x.Farmers)
+            .WithOne(x => x.Collector)
+            .HasForeignKey(x => x.CollectorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Collection request
+        modelBuilder.Entity<CollectionRequest>(entity =>
+        {
+            entity.ToTable("CollectionRequests");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.EstimatedQuantityKg)
+                .HasPrecision(12, 3);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.Property(x => x.CollectorNote)
+                .HasMaxLength(500);
+
+            entity.HasOne(x => x.Farmer)
+                .WithMany()
+                .HasForeignKey(x => x.FarmerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.FarmerId,
+                x.Status
+            });
+
+            entity.HasIndex(x => x.RequestedAt);
+        });
+
+        // Existing Collection entity
+        modelBuilder.Entity<Collection>(entity =>
+        {
+            entity.Property(x => x.GrossWeight).HasPrecision(12, 3);
+            entity.Property(x => x.WaterReduction).HasPrecision(12, 3);
+            entity.Property(x => x.BagWeight).HasPrecision(12, 3);
+            entity.Property(x => x.OtherReduction).HasPrecision(12, 3);
+            entity.Property(x => x.FinalWeight).HasPrecision(12, 3);
+
+            entity.Property(x => x.PricePerKg).HasPrecision(12, 2);
+            entity.Property(x => x.TotalAmount).HasPrecision(14, 2);
+
+            entity.HasOne(x => x.Request)
+                .WithOne(x => x.Collection)
+                .HasForeignKey<Collection>(x => x.RequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.RequestId)
+                .IsUnique();
+
+            entity.HasIndex(x => new
+            {
+                x.FarmerId,
+                x.CollectedAt
+            });
+
+            entity.HasIndex(x => new
+            {
+                x.CollectorId,
+                x.CollectedAt
+            });
+        });
+
+        // Notifications
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("Notifications");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Title)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            entity.Property(x => x.Message)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            entity.Property(x => x.EntityType)
+                .HasMaxLength(80)
+                .IsRequired();
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.CreatedAt
+            });
+        });
+
+        // Weight verification
+        modelBuilder.Entity<WeightVerification>(entity =>
+        {
+            entity.ToTable("WeightVerifications");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.GrossWeight).HasPrecision(12, 3);
+            entity.Property(x => x.WaterReduction).HasPrecision(12, 3);
+            entity.Property(x => x.BagWeight).HasPrecision(12, 3);
+            entity.Property(x => x.OtherReduction).HasPrecision(12, 3);
+            entity.Property(x => x.FinalWeight).HasPrecision(12, 3);
+
+            entity.HasOne(x => x.Collection)
+                .WithOne(x => x.WeightVerification)
+                .HasForeignKey<WeightVerification>(x => x.CollectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.CollectionId)
+                .IsUnique();
+        });
+
+        // Farmer passbook
+        modelBuilder.Entity<PassbookEntry>(entity =>
+        {
+            entity.ToTable("PassbookEntries");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.GrossWeight).HasPrecision(12, 3);
+            entity.Property(x => x.TotalReduction).HasPrecision(12, 3);
+            entity.Property(x => x.FinalWeight).HasPrecision(12, 3);
+
+            entity.HasOne(x => x.Farmer)
+                .WithMany()
+                .HasForeignKey(x => x.FarmerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Collection)
+                .WithOne(x => x.PassbookEntry)
+                .HasForeignKey<PassbookEntry>(x => x.CollectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.CollectionId)
+                .IsUnique();
+
+            entity.HasIndex(x => new
+            {
+                x.FarmerId,
+                x.RecordedAt
+            });
+        });
     }
 }

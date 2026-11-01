@@ -202,6 +202,19 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<CollectionRequestService>();
 builder.Services.AddScoped<ICollectionService, CollectionService>();
 
+builder.Services.AddScoped<
+    INotificationService,
+    NotificationService>();
+
+builder.Services.AddScoped<
+    CollectionRequestService>();
+
+builder.Services.AddScoped<
+    CollectionService>();
+
+builder.Services.AddScoped<
+    WeightVerificationService>();
+
 builder.Services.AddCors(
     options =>
     {

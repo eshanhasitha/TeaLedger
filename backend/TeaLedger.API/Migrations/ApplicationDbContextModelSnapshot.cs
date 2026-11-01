@@ -69,7 +69,8 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("BagWeight")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.Property<DateTime>("CollectedAt")
                         .HasColumnType("timestamp with time zone");
@@ -84,16 +85,20 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("FinalWeight")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.Property<decimal>("GrossWeight")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.Property<decimal>("OtherReduction")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.Property<decimal>("PricePerKg")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
 
                     b.Property<Guid>("RequestId")
                         .HasColumnType("uuid");
@@ -102,20 +107,24 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("TotalAmount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("WaterReduction")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FarmerId");
-
                     b.HasIndex("RequestId")
                         .IsUnique();
+
+                    b.HasIndex("CollectorId", "CollectedAt");
+
+                    b.HasIndex("FarmerId", "CollectedAt");
 
                     b.ToTable("Collections");
                 });
@@ -127,10 +136,12 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("CollectorNote")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<decimal>("EstimatedQuantityKg")
-                        .HasColumnType("numeric");
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("uuid");
@@ -141,14 +152,18 @@ namespace TeaLedger.API.Migrations
                     b.Property<DateTime?>("RespondedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FarmerId");
+                    b.HasIndex("RequestedAt");
 
-                    b.ToTable("CollectionRequests");
+                    b.HasIndex("FarmerId", "Status");
+
+                    b.ToTable("CollectionRequests", (string)null);
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Collector", b =>
@@ -238,27 +253,30 @@ namespace TeaLedger.API.Migrations
 
                     b.Property<string>("EntityType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("ReadAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "CreatedAt");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.PassbookEntry", b =>
@@ -270,12 +288,32 @@ namespace TeaLedger.API.Migrations
                     b.Property<Guid>("CollectionId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("FarmerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("FinalWeight")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<decimal>("GrossWeight")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("TotalReduction")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CollectionId")
                         .IsUnique();
 
-                    b.ToTable("PassbookEntries");
+                    b.HasIndex("FarmerId", "RecordedAt");
+
+                    b.ToTable("PassbookEntries", (string)null);
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.User", b =>
@@ -322,15 +360,43 @@ namespace TeaLedger.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("BagWeight")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
                     b.Property<Guid>("CollectionId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("FinalWeight")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<decimal>("GrossWeight")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<decimal>("OtherReduction")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
+
+                    b.Property<DateTime>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("VerifiedByCollectorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("WaterReduction")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CollectionId")
                         .IsUnique();
 
-                    b.ToTable("WeightVerifications");
+                    b.HasIndex("VerifiedByCollectorId");
+
+                    b.ToTable("WeightVerifications", (string)null);
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Collection", b =>
@@ -357,7 +423,7 @@ namespace TeaLedger.API.Migrations
                     b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
                         .WithMany()
                         .HasForeignKey("FarmerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Farmer");
@@ -408,10 +474,18 @@ namespace TeaLedger.API.Migrations
                     b.HasOne("TeaLedger.API.Models.Collection", "Collection")
                         .WithOne("PassbookEntry")
                         .HasForeignKey("TeaLedger.API.Models.PassbookEntry", "CollectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
+                        .WithMany()
+                        .HasForeignKey("FarmerId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Collection");
+
+                    b.Navigation("Farmer");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.WeightVerification", b =>
@@ -419,10 +493,18 @@ namespace TeaLedger.API.Migrations
                     b.HasOne("TeaLedger.API.Models.Collection", "Collection")
                         .WithOne("WeightVerification")
                         .HasForeignKey("TeaLedger.API.Models.WeightVerification", "CollectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TeaLedger.API.Models.Collector", "VerifiedByCollector")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByCollectorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Collection");
+
+                    b.Navigation("VerifiedByCollector");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Collection", b =>

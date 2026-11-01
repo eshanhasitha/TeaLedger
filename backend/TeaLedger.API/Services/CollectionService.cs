@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Collections;
+using TeaLedger.API.DTOs.Passbook;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
 
@@ -83,6 +84,43 @@ public class CollectionService : ICollectionService
         BagWeight = x.BagWeight, OtherReduction = x.OtherReduction, FinalWeight = x.FinalWeight,
         PricePerKg = x.PricePerKg, TotalAmount = x.TotalAmount, Status = x.Status, CollectedAt = x.CollectedAt
     };
+
+    public async Task<IReadOnlyList<PassbookEntryDto>>
+        PassbookAsync(
+            Guid farmerUserId,
+            DateTime? from,
+            DateTime? to,
+            CancellationToken ct)
+    {
+        var query = _db.PassbookEntries
+            .AsNoTracking()
+            .Where(x => x.Farmer.UserId == farmerUserId);
+
+        if (from.HasValue)
+        {
+            query = query.Where(
+                x => x.RecordedAt >= from.Value.ToUniversalTime());
+        }
+
+        if (to.HasValue)
+        {
+            var end = to.Value.ToUniversalTime().AddDays(1);
+            query = query.Where(x => x.RecordedAt < end);
+        }
+
+        return await query
+            .OrderByDescending(x => x.RecordedAt)
+            .Select(x => new PassbookEntryDto
+            {
+                Id = x.Id,
+                CollectionId = x.CollectionId,
+                GrossWeight = x.GrossWeight,
+                TotalReduction = x.TotalReduction,
+                FinalWeight = x.FinalWeight,
+                RecordedAt = x.RecordedAt
+            })
+            .ToListAsync(ct);
+    }
 
     private static CollectionDto Map(Collection collection, Farmer farmer) => ToDto(collection);
 }
