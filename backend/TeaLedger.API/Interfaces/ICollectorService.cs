@@ -1,3 +1,4 @@
+
 using TeaLedger.API.DTOs.Collectors;
 
 namespace TeaLedger.API.Interfaces;
@@ -29,4 +30,22 @@ public interface ICollectorService
         Guid id,
         bool isActive,
         CancellationToken cancellationToken);
+
+    Task<CollectorProfileDto?> GetMyProfileAsync(
+        Guid userId,
+        CancellationToken cancellationToken);
+
+    Task<CollectorProfileDto?> UpdateMyProfileAsync(
+        Guid userId,
+        UpdateCollectorDto request,
+        CancellationToken cancellationToken);
+
+    Task<(IReadOnlyList<CollectorDto> Items, int TotalCount)>
+        SearchCollectorsAsync(
+            int page,
+            int pageSize,
+            string? search,
+            string? area,
+            bool? isActive,
+            CancellationToken cancellationToken);
 }

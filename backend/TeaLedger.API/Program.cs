@@ -186,6 +186,17 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ICollectorService,
     CollectorService>();
+builder.Services.AddScoped<
+    ICollectorRepository,
+    CollectorRepository>();
+
+builder.Services.AddScoped<
+    ICollectorService,
+    CollectorService>();
+
+builder.Services.AddScoped<
+    IActivityLogService,
+    ActivityLogService>();
 
 builder.Services.AddCors(
     options =>

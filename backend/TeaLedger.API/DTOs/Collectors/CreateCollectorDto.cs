@@ -1,3 +1,4 @@
+
 using System.ComponentModel.DataAnnotations;
 
 namespace TeaLedger.API.DTOs.Collectors;
@@ -19,4 +20,7 @@ public sealed class CreateCollectorDto
 
     [StringLength(300)]
     public string? Address { get; set; }
+
+    [StringLength(150, MinimumLength = 2)]
+    public string? Area { get; set; }
 }
