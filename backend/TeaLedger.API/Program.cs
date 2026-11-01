@@ -198,6 +198,9 @@ builder.Services.AddScoped<
     IActivityLogService,
     ActivityLogService>();
 
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<CollectionRequestService>();
+
 builder.Services.AddCors(
     options =>
     {

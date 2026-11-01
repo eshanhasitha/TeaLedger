@@ -114,6 +114,42 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("Collections");
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.CollectionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CollectorNote")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("EstimatedQuantityKg")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("FarmerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId");
+
+                    b.HasIndex("FarmerId");
+
+                    b.ToTable("CollectionRequests");
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.Collector", b =>
                 {
                     b.Property<Guid>("Id")
@@ -187,6 +223,43 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("Farmers");
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -236,6 +309,23 @@ namespace TeaLedger.API.Migrations
                     b.Navigation("Farmer");
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.CollectionRequest", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Collection", "Collection")
+                        .WithMany()
+                        .HasForeignKey("CollectionId");
+
+                    b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
+                        .WithMany()
+                        .HasForeignKey("FarmerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Farmer");
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.Collector", b =>
                 {
                     b.HasOne("TeaLedger.API.Models.User", "User")
@@ -261,6 +351,17 @@ namespace TeaLedger.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Collector");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.Notification", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

@@ -21,7 +21,13 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Collection> Collections => Set<Collection>();
 
+    public DbSet<CollectionRequest> CollectionRequests => Set<CollectionRequest>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    
+    
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
