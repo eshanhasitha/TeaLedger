@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using TeaLedger.API.Models;
+using TeaLedger.API.Data.Configuration;
 
 namespace TeaLedger.API.Data;
+
 
 public class ApplicationDbContext : DbContext
 {
@@ -18,6 +20,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Collector> Collectors => Set<Collector>();
 
     public DbSet<Collection> Collections => Set<Collection>();
+
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
@@ -49,6 +53,37 @@ public class ApplicationDbContext : DbContext
             .IsUnique();
         modelBuilder.Entity<Farmer>()
             .HasIndex(f => new { f.CollectorId, f.IsActive });
+        
+        modelBuilder.ApplyConfiguration(
+            new CollectorConfiguration());
+
+        modelBuilder.Entity<ActivityLog>(entity =>
+        {
+            entity.ToTable("ActivityLogs");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Action)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.EntityType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Details)
+                .HasMaxLength(1000);
+
+            entity.HasIndex(x => x.ActorUserId);
+
+            entity.HasIndex(x => x.OccurredAt);
+
+            entity.HasIndex(x => new
+            {
+                x.EntityType,
+                x.EntityId
+            });
+        });
 
          // User -> Farmer
     modelBuilder.Entity<User>()
