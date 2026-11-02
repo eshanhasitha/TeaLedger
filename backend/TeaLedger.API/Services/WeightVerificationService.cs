@@ -3,16 +3,21 @@ using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Collections;
 using TeaLedger.API.DTOs.Passbook;
 using TeaLedger.API.Models;
+using TeaLedger.API.Interfaces;
 
 namespace TeaLedger.API.Services;
 
 public class WeightVerificationService
 {
     private readonly ApplicationDbContext _db;
+    private readonly IActivityLogService _activityLog;
 
-    public WeightVerificationService(ApplicationDbContext db)
+    public WeightVerificationService(
+        ApplicationDbContext db,
+        IActivityLogService activityLog)
     {
         _db = db;
+        _activityLog = activityLog;
     }
 
     public static decimal CalculateFinalWeight(
@@ -94,6 +99,29 @@ public class WeightVerificationService
 
         var now = DateTime.UtcNow;
 
+        var collectionYear = collection.CollectedAt.Year;
+        var collectionMonth = collection.CollectedAt.Month;
+
+        var applicablePrice = await _db.TeaPrices
+            .Where(x =>
+                x.CollectorId == collector.Id &&
+                x.Year == collectionYear &&
+                x.Month == collectionMonth &&
+                x.EffectiveFrom <= collection.CollectedAt)
+            .OrderByDescending(x => x.EffectiveFrom)
+            .FirstOrDefaultAsync(ct);
+
+        if (applicablePrice is null)
+        {
+            throw new InvalidOperationException(
+                "No tea price is configured for the collection date. " +
+                "Please set the monthly tea price before verifying this collection.");
+        }
+
+        var totalAmount = TeaPriceService.CalculateAmount(
+            finalWeight,
+            applicablePrice.PricePerKg);
+
         await using var transaction =
             await _db.Database.BeginTransactionAsync(ct);
 
@@ -103,6 +131,8 @@ public class WeightVerificationService
         collection.OtherReduction = input.OtherReduction;
         collection.FinalWeight = finalWeight;
         collection.Status = CollectionStatus.Collected;
+        collection.PricePerKg = applicablePrice.PricePerKg;
+        collection.TotalAmount = totalAmount;
         collection.UpdatedAt = now;
 
         var verification = new WeightVerification
