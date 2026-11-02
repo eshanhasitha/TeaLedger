@@ -31,6 +31,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
+    public DbSet<TeaPrice> TeaPrices => Set<TeaPrice>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -277,6 +279,61 @@ public class ApplicationDbContext : DbContext
             {
                 x.FarmerId,
                 x.RecordedAt
+            });
+        });
+
+        modelBuilder.Entity<TeaPrice>(entity =>
+        {
+            entity.ToTable("TeaPrices");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.PricePerKg)
+                .HasPrecision(12, 2)
+                .IsRequired();
+
+            entity.Property(x => x.EffectiveFrom)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedAt)
+                .IsRequired();
+
+            entity.Property(x => x.UpdatedAt)
+                .IsRequired();
+
+            entity.HasOne(x => x.Collector)
+                .WithMany()
+                .HasForeignKey(x => x.CollectorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // One monthly price per collector.
+            entity.HasIndex(x => new
+            {
+                x.CollectorId,
+                x.Year,
+                x.Month
+            })
+            .IsUnique();
+
+            entity.HasIndex(x => new
+            {
+                x.CollectorId,
+                x.EffectiveFrom
+            });
+
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_TeaPrices_Month",
+                    "\"Month\" >= 1 AND \"Month\" <= 12");
+
+                table.HasCheckConstraint(
+                    "CK_TeaPrices_Year",
+                    "\"Year\" >= 2020 AND \"Year\" <= 2100");
+
+                table.HasCheckConstraint(
+                    "CK_TeaPrices_PricePerKg",
+                    "\"PricePerKg\" > 0");
             });
         });
     }

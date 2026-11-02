@@ -215,6 +215,10 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     WeightVerificationService>();
 
+builder.Services.AddScoped<
+    ITeaPriceService,
+    TeaPriceService>();
+
 builder.Services.AddCors(
     options =>
     {

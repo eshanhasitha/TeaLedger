@@ -316,6 +316,54 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("PassbookEntries", (string)null);
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.TeaPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("PricePerKg")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectorId", "EffectiveFrom");
+
+                    b.HasIndex("CollectorId", "Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("TeaPrices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TeaPrices_Month", "\"Month\" >= 1 AND \"Month\" <= 12");
+
+                            t.HasCheckConstraint("CK_TeaPrices_PricePerKg", "\"PricePerKg\" > 0");
+
+                            t.HasCheckConstraint("CK_TeaPrices_Year", "\"Year\" >= 2020 AND \"Year\" <= 2100");
+                        });
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -486,6 +534,17 @@ namespace TeaLedger.API.Migrations
                     b.Navigation("Collection");
 
                     b.Navigation("Farmer");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.TeaPrice", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Collector", "Collector")
+                        .WithMany()
+                        .HasForeignKey("CollectorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Collector");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.WeightVerification", b =>
