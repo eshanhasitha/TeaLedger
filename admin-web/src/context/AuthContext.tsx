@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User, LoginCredentials, SignupFormData, AuthContextType } from '../types/auth.types';
 
@@ -160,4 +161,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

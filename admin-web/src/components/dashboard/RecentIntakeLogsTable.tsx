@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   FileText,
   Filter,
@@ -48,6 +48,11 @@ export const RecentIntakeLogsTable = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleStatusFilterChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value as IntakeSlip['status'] | 'All';
+    setStatusFilter(value);
+  };
 
   const handleExportCSV = () => {
     const headers = [
@@ -121,7 +126,7 @@ export const RecentIntakeLogsTable = () => {
           <div className="relative">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={handleStatusFilterChange}
               className="appearance-none rounded-xl border border-[#ded8cc] bg-[#fbf9f5] px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 hover:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
             >
               <option value="All">All Statuses</option>

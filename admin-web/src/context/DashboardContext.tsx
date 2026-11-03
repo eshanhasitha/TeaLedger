@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import type { IntakeSlip, UrgentCollectionRequest, WeighbridgeStationStatus } from '../types/dashboard.types';
 import type { Farmer } from '../types/farmer.types';
 import type { SettlementSummary } from '../types/settlement.types';
@@ -85,9 +86,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const toastIdRef = useRef(0);
 
   const addToast = (toast: Omit<ToastMessage, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 9);
+    toastIdRef.current += 1;
+    const id = `toast-${toastIdRef.current}`;
     setToasts((prev) => [...prev, { ...toast, id }]);
     setTimeout(() => {
       removeToast(id);

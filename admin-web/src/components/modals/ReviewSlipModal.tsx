@@ -1,21 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
 
 export const ReviewSlipModal: React.FC = () => {
   const { selectedSlipForReview, setSelectedSlipForReview, reviewSlip } = useDashboard();
-  const [tareKg, setTareKg] = useState<number>(0);
-  const [rate, setRate] = useState<number>(250.0);
-
-  useEffect(() => {
-    if (selectedSlipForReview) {
-      setTareKg(Math.abs(selectedSlipForReview.tareKg));
-      setRate(selectedSlipForReview.ratePerKg);
-    }
-  }, [selectedSlipForReview]);
+  const [drafts, setDrafts] = useState<Record<string, { tareKg: number; rate: number }>>({});
 
   if (!selectedSlipForReview) return null;
 
+  const currentDraft = drafts[selectedSlipForReview.id];
+  const tareKg = currentDraft?.tareKg ?? Math.abs(selectedSlipForReview.tareKg);
+  const rate = currentDraft?.rate ?? selectedSlipForReview.ratePerKg;
   const currentGross = selectedSlipForReview.grossKg;
   const netKg = Number(Math.max(0, currentGross - tareKg).toFixed(1));
   const totalPayable = Number((netKg * rate).toFixed(2));
@@ -70,7 +65,16 @@ export const ReviewSlipModal: React.FC = () => {
                 step="0.5"
                 min="0"
                 value={tareKg}
-                onChange={(e) => setTareKg(parseFloat(e.target.value) || 0)}
+                onChange={(e) => {
+                  const nextTare = parseFloat(e.target.value) || 0;
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [selectedSlipForReview.id]: {
+                      tareKg: nextTare,
+                      rate,
+                    },
+                  }));
+                }}
                 className="w-full rounded-xl border border-[#ded8cc] px-3.5 py-2 text-sm font-bold text-rose-600 focus:border-emerald-600 focus:outline-none"
               />
             </div>
@@ -109,4 +113,3 @@ export const ReviewSlipModal: React.FC = () => {
     </div>
   );
 };
-

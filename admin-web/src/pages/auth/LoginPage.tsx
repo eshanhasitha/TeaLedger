@@ -16,6 +16,12 @@ import { ForgotPasswordModal } from '../../components/modals/ForgotPasswordModal
 import { SystemStatusModal } from '../../components/modals/SystemStatusModal';
 import logoImg from '../../assets/logo.png';
 
+interface LocationState {
+  from?: {
+    pathname?: string;
+  };
+}
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,10 +60,14 @@ export const LoginPage = () => {
 
     try {
       await login({ email: email.trim(), password, rememberMe });
-      const destination = (location.state as any)?.from?.pathname || '/dashboard';
+      const destination = (location.state as LocationState | null)?.from?.pathname || '/dashboard';
       navigate(destination, { replace: true });
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Authentication failed. Please verify credentials.');
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Authentication failed. Please verify credentials.'
+      );
     }
   };
 

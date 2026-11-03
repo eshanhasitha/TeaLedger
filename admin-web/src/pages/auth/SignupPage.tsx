@@ -99,8 +99,12 @@ export const SignupPage = () => {
       });
 
       navigate('/dashboard', { replace: true });
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Enrollment failed. Please check your credentials.');
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Enrollment failed. Please check your credentials.'
+      );
     }
   };
 
