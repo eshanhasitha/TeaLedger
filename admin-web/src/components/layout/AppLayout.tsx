@@ -3,7 +3,7 @@ import { Sidebar } from '../sidebar/Sidebar';
 import { Navbar } from '../navbar/Navbar';
 import { DashboardPage } from '../../pages/Dashboard/DashboardPage';
 import { SecondaryView } from '../../pages/SecondaryView';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 import { RecordCollectionModal } from '../modals/RecordCollectionModal';
 import { AddFarmerModal } from '../modals/AddFarmerModal';
 import { MonthlySettlementModal } from '../modals/MonthlySettlementModal';

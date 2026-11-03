@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { IntakeSlip, UrgentCollectionRequest, WeighbridgeStationStatus } from '../types/dashboard.types';
+import { useState, type ReactNode } from 'react';
+import type { IntakeSlip, UrgentCollectionRequest, WeighbridgeStationStatus, ToastMessage } from '../types/dashboard.types';
 import type { Farmer } from '../types/farmer.types';
 import type { SettlementSummary } from '../types/settlement.types';
 import {
@@ -9,59 +9,9 @@ import {
   SETTLEMENT_SUMMARY,
   WEIGHBRIDGE_STATUS,
 } from '../services/mockData';
+import { DashboardContext } from './dashboardContextDef';
 
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'info' | 'warning' | 'error';
-  title: string;
-  message?: string;
-}
-
-interface DashboardContextType {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  
-  // Data
-  slips: IntakeSlip[];
-  requests: UrgentCollectionRequest[];
-  farmers: Farmer[];
-  settlement: SettlementSummary;
-  stationStatus: WeighbridgeStationStatus;
-  isScaleSyncing: boolean;
-  
-  // Actions
-  addSlip: (slip: Omit<IntakeSlip, 'id' | 'timestamp' | 'status'> & { status?: IntakeSlip['status'] }) => void;
-  verifySlip: (id: string) => void;
-  reviewSlip: (id: string, newTareKg: number, newRate?: number) => void;
-  addFarmer: (farmer: Omit<Farmer, 'id' | 'status' | 'joinedDate' | 'totalDeliveredKgMonth'>) => void;
-  assignCollectorToRequest: (requestId: string, collector: string) => void;
-  triggerScaleSync: () => void;
-
-  // Modals
-  isRecordModalOpen: boolean;
-  setIsRecordModalOpen: (open: boolean) => void;
-  isAddFarmerModalOpen: boolean;
-  setIsAddFarmerModalOpen: (open: boolean) => void;
-  isSettlementModalOpen: boolean;
-  setIsSettlementModalOpen: (open: boolean) => void;
-  isNotificationModalOpen: boolean;
-  setIsNotificationModalOpen: (open: boolean) => void;
-  isAuditModalOpen: boolean;
-  setIsAuditModalOpen: (open: boolean) => void;
-  selectedSlipForReview: IntakeSlip | null;
-  setSelectedSlipForReview: (slip: IntakeSlip | null) => void;
-  selectedSlipForPrint: IntakeSlip | null;
-  setSelectedSlipForPrint: (slip: IntakeSlip | null) => void;
-
-  // Toasts
-  toasts: ToastMessage[];
-  addToast: (toast: Omit<ToastMessage, 'id'>) => void;
-  removeToast: (id: string) => void;
-}
-
-const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
+let toastCounter = 0;
 
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -86,16 +36,17 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
   const addToast = (toast: Omit<ToastMessage, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 9);
+    toastCounter += 1;
+    const id = `toast-${Date.now()}-${toastCounter}`;
     setToasts((prev) => [...prev, { ...toast, id }]);
     setTimeout(() => {
       removeToast(id);
     }, 4500);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   const addSlip = (slipData: Omit<IntakeSlip, 'id' | 'timestamp' | 'status'> & { status?: IntakeSlip['status'] }) => {
@@ -248,12 +199,4 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </DashboardContext.Provider>
   );
-};
-
-export const useDashboard = () => {
-  const context = useContext(DashboardContext);
-  if (!context) {
-    throw new Error('useDashboard must be used within a DashboardProvider');
-  }
-  return context;
 };

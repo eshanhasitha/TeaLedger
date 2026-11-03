@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Scale, Check } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const RecordCollectionModal = () => {
   const { isRecordModalOpen, setIsRecordModalOpen, addSlip, farmers } = useDashboard();
@@ -118,7 +118,7 @@ export const RecordCollectionModal = () => {
               </label>
               <select
                 value={weighbridgeId}
-                onChange={(e) => setWeighbridgeId(e.target.value as any)}
+                onChange={(e) => setWeighbridgeId(e.target.value as 'WB-01' | 'WB-02' | 'WB-03')}
                 className="w-full rounded-xl border border-[#ded8cc] bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-900 focus:border-emerald-600 focus:outline-none"
               >
                 <option value="WB-01">Weighbridge 01 (Intake Main)</option>

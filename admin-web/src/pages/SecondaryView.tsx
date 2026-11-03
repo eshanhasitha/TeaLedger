@@ -9,7 +9,7 @@ import {
   Plus,
   CheckCircle2,
 } from 'lucide-react';
-import { useDashboard } from '../context/DashboardContext';
+import { useDashboard } from '../hooks/useDashboard';
 
 export const SecondaryView = () => {
   const {

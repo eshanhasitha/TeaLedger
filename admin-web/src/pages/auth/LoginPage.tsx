@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { AuthHero } from '../../components/layout/AuthHero';
 import { ForgotPasswordModal } from '../../components/modals/ForgotPasswordModal';
 import { SystemStatusModal } from '../../components/modals/SystemStatusModal';
@@ -54,10 +54,17 @@ export const LoginPage = () => {
 
     try {
       await login({ email: email.trim(), password, rememberMe });
-      const destination = (location.state as any)?.from?.pathname || '/dashboard';
+      interface LocationState {
+        from?: {
+          pathname: string;
+        };
+      }
+      const state = location.state as LocationState | null;
+      const destination = state?.from?.pathname || '/dashboard';
       navigate(destination, { replace: true });
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Authentication failed. Please verify credentials.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication failed. Please verify credentials.';
+      setErrorMessage(message);
     }
   };
 

@@ -1,5 +1,5 @@
 import { X, Calculator, CheckCircle2 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const MonthlySettlementModal = () => {
   const { isSettlementModalOpen, setIsSettlementModalOpen, settlement, addToast } = useDashboard();

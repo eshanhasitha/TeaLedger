@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertOctagon, UserPlus, CheckCircle2 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const UrgentCollectionRequests: React.FC = () => {
   const { requests, assignCollectorToRequest } = useDashboard();

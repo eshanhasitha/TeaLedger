@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { User, LoginCredentials, SignupFormData, AuthContextType } from '../types/auth.types';
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { useState, useEffect, type ReactNode } from 'react';
+import type { User, LoginCredentials, SignupFormData } from '../types/auth.types';
+import { AuthContext } from './authContextDef';
 
 const TOKEN_KEY = 'tealedger_auth_token';
 const USER_KEY = 'tealedger_auth_user';
@@ -152,12 +151,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-

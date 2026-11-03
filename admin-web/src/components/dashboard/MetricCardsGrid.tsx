@@ -11,7 +11,7 @@ import {
   ArrowUp,
   AlertCircle,
 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const MetricCardsGrid: React.FC = () => {
   const { slips, farmers, setIsSettlementModalOpen, setActiveTab } = useDashboard();
