@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/earnings/farmer/ledger?from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: inherit
+order: 4000

@@ -1,6 +1,6 @@
 $kind: http-request
-url: "{{baseUrl}}/api/profile/me"
+url: "{{baseUrl}}/api/farmer/profile"
 method: GET
 auth:
   type: inherit
-order: 3000
+order: 6000
