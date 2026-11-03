@@ -12,5 +12,9 @@ public class PassbookEntryDto
 
     public decimal FinalWeight { get; set; }
 
+    public decimal PricePerKg { get; set; }
+
+    public decimal TotalAmount { get; set; }
+
     public DateTime RecordedAt { get; set; }
 }

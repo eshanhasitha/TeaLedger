@@ -33,6 +33,9 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<TeaPrice> TeaPrices => Set<TeaPrice>();
 
+    public DbSet<FinancialLedgerEntry> FinancialLedgerEntries
+    => Set<FinancialLedgerEntry>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -143,10 +146,6 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(x => x.EstimatedQuantityKg)
                 .HasPrecision(12, 3);
-
-            entity.Property(x => x.Status)
-                .HasConversion<string>()
-                .HasMaxLength(30);
 
             entity.Property(x => x.CollectorNote)
                 .HasMaxLength(500);
@@ -334,6 +333,78 @@ public class ApplicationDbContext : DbContext
                 table.HasCheckConstraint(
                     "CK_TeaPrices_PricePerKg",
                     "\"PricePerKg\" > 0");
+            });
+        });
+
+        modelBuilder.Entity<FinancialLedgerEntry>(entity =>
+{
+            entity.ToTable("FinancialLedgerEntries");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.TransactionType)
+                .HasConversion<string>()
+                .HasMaxLength(40)
+                .IsRequired();
+
+            entity.Property(x => x.Direction)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(x => x.Amount)
+                .HasPrecision(14, 2)
+                .IsRequired();
+
+            entity.Property(x => x.Description)
+                .HasMaxLength(250)
+                .IsRequired();
+
+            entity.Property(x => x.Reference)
+                .HasMaxLength(100);
+
+            entity.Property(x => x.OccurredAt)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedAt)
+                .IsRequired();
+
+            entity.HasOne(x => x.Farmer)
+                .WithMany()
+                .HasForeignKey(x => x.FarmerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Collection)
+                .WithMany()
+                .HasForeignKey(x => x.CollectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.FarmerId,
+                x.OccurredAt
+            });
+
+            entity.HasIndex(x => new
+            {
+                x.TransactionType,
+                x.Direction,
+                x.OccurredAt
+            });
+
+            entity.HasIndex(x => new
+            {
+                x.CollectionId,
+                x.TransactionType
+            })
+            .IsUnique()
+            .HasFilter("\"CollectionId\" IS NOT NULL");
+
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_FinancialLedgerEntries_Amount",
+                    "\"Amount\" > 0");
             });
         });
     }

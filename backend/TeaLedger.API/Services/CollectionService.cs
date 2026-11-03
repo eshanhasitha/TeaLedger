@@ -117,6 +117,8 @@ public class CollectionService : ICollectionService
                 GrossWeight = x.GrossWeight,
                 TotalReduction = x.TotalReduction,
                 FinalWeight = x.FinalWeight,
+                PricePerKg = x.Collection.PricePerKg,
+                TotalAmount = x.Collection.TotalAmount,
                 RecordedAt = x.RecordedAt
             })
             .ToListAsync(ct);

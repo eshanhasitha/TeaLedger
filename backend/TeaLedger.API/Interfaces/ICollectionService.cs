@@ -1,4 +1,5 @@
 using TeaLedger.API.DTOs.Collections;
+using TeaLedger.API.DTOs.Passbook;
 
 namespace TeaLedger.API.Interfaces;
 
@@ -8,4 +9,9 @@ public interface ICollectionService
     Task<IReadOnlyList<CollectionDto>> FarmerHistoryAsync(Guid farmerUserId, DateTime? from, DateTime? to, CancellationToken ct);
     Task<CollectionDto?> GetFarmerCollectionAsync(Guid collectionId, Guid farmerUserId, CancellationToken ct);
     Task<IReadOnlyList<CollectionDto>> AdminListAsync(DateTime? from, DateTime? to, Guid? farmerId, CancellationToken ct);
+    Task<IReadOnlyList<PassbookEntryDto>> PassbookAsync(
+    Guid farmerUserId,
+    DateTime? from,
+    DateTime? to,
+    CancellationToken ct);
 }
