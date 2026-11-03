@@ -159,8 +159,41 @@ public class WeightVerificationService
             RecordedAt = now
         };
 
+        var ledgerEntry = new FinancialLedgerEntry
+        {
+            Id = Guid.NewGuid(),
+            FarmerId = collection.FarmerId,
+            CollectionId = collection.Id,
+            TransactionType =
+                FinancialTransactionType.CollectionEarning,
+            Direction = FinancialDirection.Credit,
+            Amount = totalAmount,
+            Description = "Verified tea collection earning",
+            Reference = collection.Id.ToString(),
+            OccurredAt = now,
+            CreatedAt = now
+        };
+
+        var auditEntry = new ActivityLog
+        {
+            Id = Guid.NewGuid(),
+            ActorUserId = collectorUserId,
+            Action = "CollectionEarningRecorded",
+            EntityType = "FinancialLedgerEntry",
+            EntityId = ledgerEntry.Id,
+            Details =
+                $"CollectionId={collection.Id}; " +
+                $"FarmerId={collection.FarmerId}; " +
+                $"FinalWeight={finalWeight}; " +
+                $"PricePerKg={applicablePrice.PricePerKg}; " +
+                $"Amount={totalAmount}",
+            OccurredAt = now
+        };
+
         _db.WeightVerifications.Add(verification);
         _db.PassbookEntries.Add(passbookEntry);
+        _db.FinancialLedgerEntries.Add(ledgerEntry);
+        _db.ActivityLogs.Add(auditEntry);
 
         await _db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
@@ -172,6 +205,8 @@ public class WeightVerificationService
             GrossWeight = passbookEntry.GrossWeight,
             TotalReduction = passbookEntry.TotalReduction,
             FinalWeight = passbookEntry.FinalWeight,
+            PricePerKg = collection.PricePerKg,
+            TotalAmount = collection.TotalAmount,
             RecordedAt = passbookEntry.RecordedAt
         };
     }

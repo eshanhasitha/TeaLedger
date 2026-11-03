@@ -152,10 +152,8 @@ namespace TeaLedger.API.Migrations
                     b.Property<DateTime?>("RespondedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -237,6 +235,63 @@ namespace TeaLedger.API.Migrations
                     b.HasIndex("CollectorId", "IsActive");
 
                     b.ToTable("Farmers");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.FinancialLedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<Guid?>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("FarmerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId", "TransactionType")
+                        .IsUnique()
+                        .HasFilter("\"CollectionId\" IS NOT NULL");
+
+                    b.HasIndex("FarmerId", "OccurredAt");
+
+                    b.HasIndex("TransactionType", "Direction", "OccurredAt");
+
+                    b.ToTable("FinancialLedgerEntries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FinancialLedgerEntries_Amount", "\"Amount\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Notification", b =>
@@ -504,6 +559,24 @@ namespace TeaLedger.API.Migrations
                     b.Navigation("Collector");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.FinancialLedgerEntry", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Collection", "Collection")
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
+                        .WithMany()
+                        .HasForeignKey("FarmerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Farmer");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Notification", b =>

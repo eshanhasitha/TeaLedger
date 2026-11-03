@@ -219,6 +219,10 @@ builder.Services.AddScoped<
     ITeaPriceService,
     TeaPriceService>();
 
+builder.Services.AddScoped<
+    IEarningsService,
+    EarningsService>();
+
 builder.Services.AddCors(
     options =>
     {

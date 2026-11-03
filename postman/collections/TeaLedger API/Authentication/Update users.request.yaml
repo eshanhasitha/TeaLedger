@@ -12,4 +12,4 @@ body:
     }
 auth:
   type: inherit
-order: 5000
+order: 8000

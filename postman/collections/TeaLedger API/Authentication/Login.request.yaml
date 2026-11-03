@@ -1,4 +1,5 @@
 $kind: http-request
+name: Farmer login
 url: "{{baseUrl}}/api/auth/login"
 method: POST
 headers:
@@ -25,4 +26,4 @@ scripts:
           pm.response.to.have.status(200);
           pm.expect(pm.response.json().accessToken).to.be.a("string").and.not.empty;
       });
-order: 1000
+order: 3000

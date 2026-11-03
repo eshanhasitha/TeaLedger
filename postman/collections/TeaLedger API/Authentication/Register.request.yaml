@@ -21,4 +21,4 @@ scripts:
           pm.response.to.have.status(201);
           pm.expect(pm.response.json().role).to.eql("Farmer");
       });
-order: 1500
+order: 4000

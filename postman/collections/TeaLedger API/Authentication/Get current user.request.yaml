@@ -3,4 +3,4 @@ url: "{{baseUrl}}/api/auth/me"
 method: GET
 auth:
   type: inherit
-order: 2000
+order: 5000

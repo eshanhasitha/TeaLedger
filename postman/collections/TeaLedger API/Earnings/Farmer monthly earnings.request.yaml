@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/earnings/farmer/monthly?year={{year}}&month={{month}}"
+method: GET
+auth:
+  type: inherit
+order: 2000
