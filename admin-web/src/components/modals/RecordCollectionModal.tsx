@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { X, Scale, Check } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 
+const WEIGHBRIDGE_IDS = ['WB-01', 'WB-02', 'WB-03'] as const;
+type WeighbridgeId = (typeof WEIGHBRIDGE_IDS)[number];
+
+const isWeighbridgeId = (value: string): value is WeighbridgeId =>
+  WEIGHBRIDGE_IDS.includes(value as WeighbridgeId);
+
 export const RecordCollectionModal = () => {
   const { isRecordModalOpen, setIsRecordModalOpen, addSlip, farmers } = useDashboard();
 
@@ -11,7 +17,7 @@ export const RecordCollectionModal = () => {
   const [grossKg, setGrossKg] = useState<number>(120);
   const [tareKg, setTareKg] = useState<number>(6.5);
   const [ratePerKg, setRatePerKg] = useState<number>(250.0);
-  const [weighbridgeId, setWeighbridgeId] = useState<'WB-01' | 'WB-02' | 'WB-03'>('WB-01');
+  const [weighbridgeId, setWeighbridgeId] = useState<WeighbridgeId>('WB-01');
 
   if (!isRecordModalOpen) return null;
 
@@ -118,7 +124,11 @@ export const RecordCollectionModal = () => {
               </label>
               <select
                 value={weighbridgeId}
-                onChange={(e) => setWeighbridgeId(e.target.value as 'WB-01' | 'WB-02' | 'WB-03')}
+                onChange={(e) => {
+                  if (isWeighbridgeId(e.target.value)) {
+                    setWeighbridgeId(e.target.value);
+                  }
+                }}
                 className="w-full rounded-xl border border-[#ded8cc] bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-900 focus:border-emerald-600 focus:outline-none"
               >
                 <option value="WB-01">Weighbridge 01 (Intake Main)</option>

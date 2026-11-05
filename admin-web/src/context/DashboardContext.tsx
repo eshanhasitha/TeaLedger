@@ -1,5 +1,12 @@
-import { useState, type ReactNode } from 'react';
-import type { IntakeSlip, UrgentCollectionRequest, WeighbridgeStationStatus, ToastMessage } from '../types/dashboard.types';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
+import type {
+  IntakeSlip,
+  UrgentCollectionRequest,
+  WeighbridgeStationStatus,
+  ToastMessage,
+  DashboardContextType,
+} from '../types/dashboard.types';
 import type { Farmer } from '../types/farmer.types';
 import type { SettlementSummary } from '../types/settlement.types';
 import {
@@ -9,9 +16,8 @@ import {
   SETTLEMENT_SUMMARY,
   WEIGHBRIDGE_STATUS,
 } from '../services/mockData';
-import { DashboardContext } from './dashboardContextDef';
 
-let toastCounter = 0;
+export const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -35,14 +41,15 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const toastIdRef = useRef(0);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   const addToast = (toast: Omit<ToastMessage, 'id'>) => {
-    toastCounter += 1;
-    const id = `toast-${Date.now()}-${toastCounter}`;
+    toastIdRef.current += 1;
+    const id = `toast-${toastIdRef.current}`;
     setToasts((prev) => [...prev, { ...toast, id }]);
     setTimeout(() => {
       removeToast(id);
@@ -199,4 +206,12 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </DashboardContext.Provider>
   );
+};
+
+export const useDashboard = () => {
+  const context = useContext(DashboardContext);
+  if (!context) {
+    throw new Error('useDashboard must be used within a DashboardProvider');
+  }
+  return context;
 };

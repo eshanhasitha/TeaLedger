@@ -100,8 +100,11 @@ export const SignupPage = () => {
 
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Enrollment failed. Please check your credentials.';
-      setErrorMessage(message);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : 'Enrollment failed. Please check your credentials.'
+      );
     }
   };
 
