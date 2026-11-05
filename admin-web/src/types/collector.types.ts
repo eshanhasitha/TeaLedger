@@ -71,3 +71,4 @@ export interface CollectorRoutePerformance {
   routeCoveragePercentage: number;
   fuelEfficiencyKmPerL: number;
 }
+
