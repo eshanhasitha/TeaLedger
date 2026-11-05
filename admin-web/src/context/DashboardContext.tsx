@@ -9,10 +9,12 @@ import type {
 } from '../types/dashboard.types';
 import type { Farmer } from '../types/farmer.types';
 import type { SettlementSummary } from '../types/settlement.types';
+import type { TeaCollector, CollectorFormData, CollectorStatus } from '../types/collector.types';
 import {
   INITIAL_SLIPS,
   INITIAL_REQUESTS,
   INITIAL_FARMERS,
+  INITIAL_COLLECTORS,
   SETTLEMENT_SUMMARY,
   WEIGHBRIDGE_STATUS,
 } from '../services/mockData';
@@ -26,6 +28,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [slips, setSlips] = useState<IntakeSlip[]>(INITIAL_SLIPS);
   const [requests, setRequests] = useState<UrgentCollectionRequest[]>(INITIAL_REQUESTS);
   const [farmers, setFarmers] = useState<Farmer[]>(INITIAL_FARMERS);
+  const [collectors, setCollectors] = useState<TeaCollector[]>(INITIAL_COLLECTORS);
   const [settlement] = useState<SettlementSummary>(SETTLEMENT_SUMMARY);
   const [stationStatus] = useState<WeighbridgeStationStatus>(WEIGHBRIDGE_STATUS);
   const [isScaleSyncing, setIsScaleSyncing] = useState<boolean>(false);
@@ -33,11 +36,13 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   // Modals state
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isAddFarmerModalOpen, setIsAddFarmerModalOpen] = useState(false);
+  const [isAddCollectorModalOpen, setIsAddCollectorModalOpen] = useState(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [selectedSlipForReview, setSelectedSlipForReview] = useState<IntakeSlip | null>(null);
   const [selectedSlipForPrint, setSelectedSlipForPrint] = useState<IntakeSlip | null>(null);
+  const [selectedCollectorForDetail, setSelectedCollectorForDetail] = useState<TeaCollector | null>(null);
 
   // Toast state
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -132,6 +137,45 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const addCollector = (collectorData: CollectorFormData) => {
+    const nextNumber = 400 + collectors.length + 1;
+    const newCollector: TeaCollector = {
+      id: `COL-${nextNumber}`,
+      ...collectorData,
+      activeFarmersCount: 0,
+      todayIntakeKg: 0,
+      registeredDate: new Date().toISOString().split('T')[0],
+      batteryLevel: 100,
+      scaleStatus: collectorData.status === 'Active' ? 'Online' : 'Offline',
+    };
+
+    setCollectors((prev) => [newCollector, ...prev]);
+    addToast({
+      type: 'success',
+      title: 'Collector Registered',
+      message: `Collector ${newCollector.fullName} (${newCollector.id}) registered successfully.`,
+    });
+  };
+
+  const updateCollectorStatus = (id: string, newStatus: CollectorStatus) => {
+    setCollectors((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              status: newStatus,
+              scaleStatus: newStatus === 'Active' ? 'Online' : 'Offline',
+            }
+          : c
+      )
+    );
+    addToast({
+      type: 'info',
+      title: 'Collector Status Updated',
+      message: `Collector ${id} status set to ${newStatus}.`,
+    });
+  };
+
   const assignCollectorToRequest = (requestId: string, collector: string) => {
     setRequests((prev) =>
       prev.map((r) =>
@@ -175,6 +219,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         slips,
         requests,
         farmers,
+        collectors,
         settlement,
         stationStatus,
         isScaleSyncing,
@@ -182,12 +227,16 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         verifySlip,
         reviewSlip,
         addFarmer,
+        addCollector,
+        updateCollectorStatus,
         assignCollectorToRequest,
         triggerScaleSync,
         isRecordModalOpen,
         setIsRecordModalOpen,
         isAddFarmerModalOpen,
         setIsAddFarmerModalOpen,
+        isAddCollectorModalOpen,
+        setIsAddCollectorModalOpen,
         isSettlementModalOpen,
         setIsSettlementModalOpen,
         isNotificationModalOpen,
@@ -198,6 +247,8 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setSelectedSlipForReview,
         selectedSlipForPrint,
         setSelectedSlipForPrint,
+        selectedCollectorForDetail,
+        setSelectedCollectorForDetail,
         toasts,
         addToast,
         removeToast,

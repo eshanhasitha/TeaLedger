@@ -1,5 +1,6 @@
 import type { Farmer } from './farmer.types';
 import type { SettlementSummary } from './settlement.types';
+import type { TeaCollector, CollectorFormData, CollectorStatus } from './collector.types';
 
 export interface MetricCardData {
   id: string;
@@ -85,6 +86,7 @@ export interface DashboardContextType {
   slips: IntakeSlip[];
   requests: UrgentCollectionRequest[];
   farmers: Farmer[];
+  collectors: TeaCollector[];
   settlement: SettlementSummary;
   stationStatus: WeighbridgeStationStatus;
   isScaleSyncing: boolean;
@@ -94,6 +96,8 @@ export interface DashboardContextType {
   verifySlip: (id: string) => void;
   reviewSlip: (id: string, newTareKg: number, newRate?: number) => void;
   addFarmer: (farmer: Omit<Farmer, 'id' | 'status' | 'joinedDate' | 'totalDeliveredKgMonth'>) => void;
+  addCollector: (collector: CollectorFormData) => void;
+  updateCollectorStatus: (id: string, status: CollectorStatus) => void;
   assignCollectorToRequest: (requestId: string, collector: string) => void;
   triggerScaleSync: () => void;
 
@@ -102,6 +106,8 @@ export interface DashboardContextType {
   setIsRecordModalOpen: (open: boolean) => void;
   isAddFarmerModalOpen: boolean;
   setIsAddFarmerModalOpen: (open: boolean) => void;
+  isAddCollectorModalOpen: boolean;
+  setIsAddCollectorModalOpen: (open: boolean) => void;
   isSettlementModalOpen: boolean;
   setIsSettlementModalOpen: (open: boolean) => void;
   isNotificationModalOpen: boolean;
@@ -112,6 +118,8 @@ export interface DashboardContextType {
   setSelectedSlipForReview: (slip: IntakeSlip | null) => void;
   selectedSlipForPrint: IntakeSlip | null;
   setSelectedSlipForPrint: (slip: IntakeSlip | null) => void;
+  selectedCollectorForDetail: TeaCollector | null;
+  setSelectedCollectorForDetail: (collector: TeaCollector | null) => void;
 
   // Toasts
   toasts: ToastMessage[];

@@ -17,6 +17,7 @@ export const AppRoutes = () => {
       {/* Protected Estate Admin Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<AppLayout />} />
+        <Route path="/collectors" element={<AppLayout />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>
 

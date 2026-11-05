@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from '../sidebar/Sidebar';
 import { Navbar } from '../navbar/Navbar';
 import { DashboardPage } from '../../pages/Dashboard/DashboardPage';
@@ -6,6 +7,8 @@ import { SecondaryView } from '../../pages/SecondaryView';
 import { useDashboard } from '../../hooks/useDashboard';
 import { RecordCollectionModal } from '../modals/RecordCollectionModal';
 import { AddFarmerModal } from '../modals/AddFarmerModal';
+import { AddCollectorModal } from '../modals/AddCollectorModal';
+import { CollectorDetailDrawer } from '../drawers/CollectorDetailDrawer';
 import { MonthlySettlementModal } from '../modals/MonthlySettlementModal';
 import { SendNotificationModal } from '../modals/SendNotificationModal';
 import { ReviewSlipModal } from '../modals/ReviewSlipModal';
@@ -15,7 +18,20 @@ import { ToastContainer } from '../ui/ToastContainer';
 
 export const AppLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { activeTab } = useDashboard();
+  const location = useLocation();
+  const {
+    activeTab,
+    setActiveTab,
+    selectedCollectorForDetail,
+    setSelectedCollectorForDetail,
+    updateCollectorStatus,
+  } = useDashboard();
+
+  useEffect(() => {
+    if (location.pathname === '/collectors') {
+      setActiveTab('collectors');
+    }
+  }, [location.pathname, setActiveTab]);
 
   return (
     <div className="flex min-h-screen bg-[#f7f5f0]">
@@ -37,6 +53,13 @@ export const AppLayout: React.FC = () => {
       {/* Interactive Modals */}
       <RecordCollectionModal />
       <AddFarmerModal />
+      <AddCollectorModal />
+      <CollectorDetailDrawer
+        collector={selectedCollectorForDetail}
+        isOpen={Boolean(selectedCollectorForDetail)}
+        onClose={() => setSelectedCollectorForDetail(null)}
+        onUpdateStatus={updateCollectorStatus}
+      />
       <MonthlySettlementModal />
       <SendNotificationModal />
       <ReviewSlipModal />
