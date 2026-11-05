@@ -13,4 +13,6 @@ public class Collector
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public User User { get; set; } = null!;
+
+    public ICollection<Farmer> Farmers { get; set; } = new List<Farmer>();
 }

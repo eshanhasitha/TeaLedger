@@ -1,0 +1,48 @@
+name: TeaLedger Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:5252'
+  - key: phoneNumber
+    value: ''
+  - key: collectorPhoneNumber
+    value: ''
+  - key: collectorPassword
+    value: ''
+  - key: adminPhoneNumber
+    value: ''
+  - key: adminPassword
+    value: ''
+  - key: fullName
+    value: ''
+  - key: confirmPassword
+    value: ''
+  - key: password
+    value: ''
+  - key: accessToken
+    value: ''
+  - key: currentPassword
+    value: ''
+  - key: newPassword
+    value: ''
+  - key: confirmNewPassword
+    value: ''
+  - key: userId
+    value: ''
+  - key: farmerId
+    value: ''
+  - key: farmerCode
+    value: ''
+  - key: address
+    value: ''
+  - key: farmSizeHectares
+    value: '1'
+  - key: isActive
+    value: 'true'
+  - key: fromDate
+    value: '2026-11-01'
+  - key: toDate
+    value: '2026-11-30'
+  - key: year
+    value: '2026'
+  - key: month
+    value: '11'
