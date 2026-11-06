@@ -226,6 +226,10 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ILoanService, LoanService>();
 
+builder.Services.AddScoped<
+    IDeductionService,
+    DeductionService>();
+
 builder.Services.AddCors(
     options =>
     {
