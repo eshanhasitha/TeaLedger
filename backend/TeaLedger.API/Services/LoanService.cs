@@ -16,6 +16,45 @@ public sealed class LoanService : ILoanService
         _db = db;
     }
 
+    public static decimal CalculateOutstandingBalance(
+        decimal principalAmount,
+        decimal totalRepaid)
+    {
+        if (principalAmount <= 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(principalAmount));
+
+        if (totalRepaid < 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(totalRepaid));
+
+        if (totalRepaid > principalAmount)
+            throw new InvalidOperationException(
+                "Total repayments cannot exceed loan principal.");
+
+        return decimal.Round(
+            principalAmount - totalRepaid,
+            2,
+            MidpointRounding.AwayFromZero);
+    }
+
+    public static void ValidateRepaymentAmount(
+        decimal repaymentAmount,
+        decimal outstandingBalance)
+    {
+        if (repaymentAmount <= 0)
+            throw new ArgumentException(
+                "Repayment amount must be greater than zero.");
+
+        if (outstandingBalance <= 0)
+            throw new InvalidOperationException(
+                "This loan has no outstanding balance.");
+
+        if (repaymentAmount > outstandingBalance)
+            throw new InvalidOperationException(
+                "Repayment cannot exceed the outstanding balance.");
+    }
+
     private async Task<Guid> GetCollectorIdAsync(
         Guid collectorUserId,
         CancellationToken ct)
@@ -61,9 +100,9 @@ public sealed class LoanService : ILoanService
             CollectorId = loan.CollectorId,
             PrincipalAmount = loan.PrincipalAmount,
             TotalRepaid = totalRepaid,
-            OutstandingBalance = Math.Max(
-                0m,
-                loan.PrincipalAmount - totalRepaid),
+            OutstandingBalance = CalculateOutstandingBalance(
+                loan.PrincipalAmount,
+                totalRepaid),
             IssuedAt = loan.IssuedAt,
             Status = loan.Status,
             Notes = loan.Notes,
@@ -241,15 +280,11 @@ public sealed class LoanService : ILoanService
                 "Repayments can only be recorded for active loans.");
 
         var totalRepaid = loan.Repayments.Sum(x => x.Amount);
-        var outstanding = loan.PrincipalAmount - totalRepaid;
+        var outstanding = CalculateOutstandingBalance(
+            loan.PrincipalAmount,
+            totalRepaid);
 
-        if (outstanding <= 0)
-            throw new InvalidOperationException(
-                "This loan has already been fully repaid.");
-
-        if (amount > outstanding)
-            throw new InvalidOperationException(
-                $"Repayment exceeds outstanding balance of {outstanding:0.00}.");
+        ValidateRepaymentAmount(amount, outstanding);
 
         var now = DateTime.UtcNow;
         var paidAt = input.PaidAt?.ToUniversalTime() ?? now;
