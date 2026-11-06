@@ -24,6 +24,10 @@ public sealed class FinancialLedgerEntry
 
     public Guid? CollectionId { get; set; }
 
+    public Guid? DeductionId { get; set; }    
+
+    public Deduction? Deduction { get; set; }
+
     public FinancialTransactionType TransactionType { get; set; }
 
     public FinancialDirection Direction { get; set; }
