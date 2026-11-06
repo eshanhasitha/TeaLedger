@@ -36,10 +36,20 @@ public class ApplicationDbContext : DbContext
     public DbSet<FinancialLedgerEntry> FinancialLedgerEntries
     => Set<FinancialLedgerEntry>();
 
+    public DbSet<Loan> Loans => Set<Loan>();
+
+    public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(new LoanConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+        
+        new LoanRepaymentConfiguration());
 
         modelBuilder.Entity<User>()
             .HasIndex(x => x.PhoneNumber)

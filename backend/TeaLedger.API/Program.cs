@@ -223,6 +223,9 @@ builder.Services.AddScoped<
     IEarningsService,
     EarningsService>();
 
+builder.Services.AddScoped<
+    ILoanService, LoanService>();
+
 builder.Services.AddCors(
     options =>
     {
