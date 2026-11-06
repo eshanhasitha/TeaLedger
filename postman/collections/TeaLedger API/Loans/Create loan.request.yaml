@@ -1,0 +1,17 @@
+$kind: http-request
+name: Create loan
+url: "{{baseUrl}}/api/loans/farmers/{{farmerId}}"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "principalAmount": 10000.00,
+      "issuedAt": "2026-11-03T06:30:00Z",
+      "notes": "Short-term farmer advance"
+    }
+auth:
+  type: inherit
+order: 1000

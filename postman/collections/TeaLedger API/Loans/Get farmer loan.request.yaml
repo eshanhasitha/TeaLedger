@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get farmer loan
+url: "{{baseUrl}}/api/loans/farmer/{{loanId}}"
+method: GET
+auth:
+  type: inherit
+order: 6000

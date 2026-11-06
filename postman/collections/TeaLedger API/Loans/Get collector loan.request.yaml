@@ -1,0 +1,7 @@
+$kind: http-request
+name: Get collector loan
+url: "{{baseUrl}}/api/loans/collector/{{loanId}}"
+method: GET
+auth:
+  type: inherit
+order: 4000
