@@ -1,0 +1,18 @@
+$kind: http-request
+name: Record repayment
+url: "{{baseUrl}}/api/loans/{{loanId}}/repayments"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "amount": 2500.00,
+      "paidAt": "2026-11-03T07:30:00Z",
+      "reference": "CASH-001",
+      "notes": "First installment"
+    }
+auth:
+  type: inherit
+order: 2000
