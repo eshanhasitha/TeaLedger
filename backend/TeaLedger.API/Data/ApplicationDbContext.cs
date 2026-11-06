@@ -40,6 +40,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
+    public DbSet<Deduction> Deductions => Set<Deduction>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -118,6 +120,12 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.OccurredAt);
 
             entity.HasIndex(x => new
+
+
+
+
+
+
             {
                 x.EntityType,
                 x.EntityId
@@ -390,6 +398,13 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(x => new
+
+            entity.HasIndex(x => x.DeductionId)
+                .IsUnique()
+                 .HasFilter("\"DeductionId\" IS NOT NULL");
+
+            entity.Property(x => x.DeductionId);
+            
             {
                 x.FarmerId,
                 x.OccurredAt
