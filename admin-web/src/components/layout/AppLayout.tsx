@@ -28,10 +28,10 @@ export const AppLayout: React.FC = () => {
   } = useDashboard();
 
   useEffect(() => {
-    if (location.pathname === '/collectors') {
+    if (location.pathname === '/collectors' && activeTab !== 'collectors') {
       setActiveTab('collectors');
     }
-  }, [location.pathname, setActiveTab]);
+  }, [location.pathname, activeTab, setActiveTab]);
 
   return (
     <div className="flex min-h-screen bg-[#f7f5f0]">

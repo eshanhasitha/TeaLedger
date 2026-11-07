@@ -1,8 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { User, LoginCredentials, SignupFormData, AuthContextType } from '../types/auth.types';
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { useState, useEffect, type ReactNode } from 'react';
+import type { User, LoginCredentials, SignupFormData } from '../types/auth.types';
+import { AuthContext } from './authContextDef';
 
 const TOKEN_KEY = 'tealedger_token';
 const USER_KEY = 'tealedger_user';
@@ -10,7 +8,7 @@ const USER_KEY = 'tealedger_user';
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
     try {
-      const savedUser = localStorage.getItem('tealedger_user') || localStorage.getItem('tealedger_auth_user');
+      const savedUser = localStorage.getItem(USER_KEY) || localStorage.getItem('tealedger_auth_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -19,7 +17,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [token, setToken] = useState<string | null>(() => {
     try {
-      return localStorage.getItem('tealedger_token') || localStorage.getItem('tealedger_auth_token') || null;
+      return localStorage.getItem(TOKEN_KEY) || localStorage.getItem('tealedger_auth_token') || null;
     } catch {
       return null;
     }
@@ -32,14 +30,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (token && user) {
         localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem('tealedger_auth_token', token);
         localStorage.setItem(USER_KEY, JSON.stringify(user));
+        localStorage.setItem('tealedger_auth_user', JSON.stringify(user));
       } else {
         localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
         localStorage.removeItem('tealedger_auth_token');
+        localStorage.removeItem(USER_KEY);
         localStorage.removeItem('tealedger_auth_user');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to sync auth state to localStorage', err);
     }
   }, [token, user]);
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Generate mock session user & token
       const isSunil = email.toLowerCase().includes('sunil') || email.toLowerCase().includes('admin');
-      
+
       const loggedUser: User = {
         id: isSunil ? 'usr-admin-01' : `usr-${Date.now()}`,
         name: isSunil ? 'Sunil Jayawardena' : email.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -133,9 +133,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     try {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('tealedger_auth_token');
       localStorage.removeItem(USER_KEY);
-    } catch {
-      // ignore
+      localStorage.removeItem('tealedger_auth_user');
+    } catch (err: unknown) {
+      console.error('Failed to clear auth state from localStorage', err);
     }
   };
 
@@ -154,12 +156,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };
