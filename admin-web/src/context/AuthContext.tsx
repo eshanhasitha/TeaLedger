@@ -4,13 +4,13 @@ import type { User, LoginCredentials, SignupFormData, AuthContextType } from '..
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = 'tealedger_auth_token';
-const USER_KEY = 'tealedger_auth_user';
+const TOKEN_KEY = 'tealedger_token';
+const USER_KEY = 'tealedger_user';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
     try {
-      const savedUser = localStorage.getItem(USER_KEY);
+      const savedUser = localStorage.getItem('tealedger_user') || localStorage.getItem('tealedger_auth_user');
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [token, setToken] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(TOKEN_KEY) || null;
+      return localStorage.getItem('tealedger_token') || localStorage.getItem('tealedger_auth_token') || null;
     } catch {
       return null;
     }
@@ -36,6 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem('tealedger_auth_token');
+        localStorage.removeItem('tealedger_auth_user');
       }
     } catch (err) {
       console.error('Failed to sync auth state to localStorage', err);
