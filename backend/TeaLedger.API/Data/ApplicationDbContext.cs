@@ -40,6 +40,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
+    public DbSet<Deduction> Deductions => Set<Deduction>();
+
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
     {
@@ -47,9 +49,9 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new LoanConfiguration());
 
-        modelBuilder.ApplyConfiguration(
-        
-        new LoanRepaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new LoanRepaymentConfiguration());
+
+        modelBuilder.ApplyConfiguration(new DeductionConfiguration());
 
         modelBuilder.Entity<User>()
             .HasIndex(x => x.PhoneNumber)
@@ -347,7 +349,7 @@ public class ApplicationDbContext : DbContext
         });
 
         modelBuilder.Entity<FinancialLedgerEntry>(entity =>
-{
+        {
             entity.ToTable("FinancialLedgerEntries");
 
             entity.HasKey(x => x.Id);
@@ -378,6 +380,8 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(x => x.CreatedAt)
                 .IsRequired();
+
+            entity.Property(x => x.DeductionId);
 
             entity.HasOne(x => x.Farmer)
                 .WithMany()
@@ -416,6 +420,10 @@ public class ApplicationDbContext : DbContext
                     "CK_FinancialLedgerEntries_Amount",
                     "\"Amount\" > 0");
             });
+
+            entity.HasIndex(x => x.DeductionId)
+            .IsUnique()
+            .HasFilter("\"DeductionId\" IS NOT NULL");
         });
     }
 }
