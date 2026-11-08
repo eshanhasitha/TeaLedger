@@ -45,8 +45,8 @@ public sealed class DeductionsController : ControllerBase
             var result = await _service.CreateAsync(
                 CurrentUserId(), farmerId, input, ct);
 
-            return Created(
-                $"/api/deductions/{result.Id}",
+            return StatusCode(
+                StatusCodes.Status201Created,
                 result);
         }
         catch (ArgumentException ex)

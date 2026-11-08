@@ -14,7 +14,7 @@ public sealed class DeductionDto
 
     public Guid CollectorId { get; set; }
 
-    public DeductionCategory Category { get; set; }
+    public string Category { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
 

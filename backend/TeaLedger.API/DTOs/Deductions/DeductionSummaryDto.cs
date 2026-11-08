@@ -18,7 +18,7 @@ public sealed class DeductionSummaryDto
 
 public sealed class DeductionCategorySummaryDto
 {
-    public DeductionCategory Category { get; set; }
+    public string Category { get; set; } = string.Empty;
 
     public int Count { get; set; }
 

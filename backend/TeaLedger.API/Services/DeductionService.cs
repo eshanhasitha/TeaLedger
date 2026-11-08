@@ -24,6 +24,15 @@ public sealed class DeductionService : IDeductionService
             throw new ArgumentException(
                 "Quantity must be greater than zero.");
 
+        if (decimal.Round(
+                quantity,
+                3,
+                MidpointRounding.AwayFromZero) != quantity)
+        {
+            throw new ArgumentException(
+                "Quantity can have a maximum of three decimal places.");
+        }
+
         if (unitPrice <= 0)
             throw new ArgumentException(
                 "Unit price must be greater than zero.");
@@ -121,7 +130,7 @@ public sealed class DeductionService : IDeductionService
         FarmerName = x.Farmer.User.FullName,
         FarmerCode = x.Farmer.FarmerCode,
         CollectorId = x.CollectorId,
-        Category = x.Category,
+        Category = x.Category.ToString(),
         Description = x.Description,
         Quantity = x.Quantity,
         Unit = x.Unit,
@@ -345,7 +354,7 @@ public sealed class DeductionService : IDeductionService
             .GroupBy(x => x.Category)
             .Select(g => new DeductionCategorySummaryDto
             {
-                Category = g.Key,
+                Category = g.Key.ToString(),
                 Count = g.Count(),
                 TotalAmount = g.Sum(x => x.Amount)
             })

@@ -49,9 +49,9 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new LoanConfiguration());
 
-        modelBuilder.ApplyConfiguration(
-        
-        new LoanRepaymentConfiguration());
+        modelBuilder.ApplyConfiguration(new LoanRepaymentConfiguration());
+
+        modelBuilder.ApplyConfiguration(new DeductionConfiguration());
 
         modelBuilder.Entity<User>()
             .HasIndex(x => x.PhoneNumber)
@@ -120,12 +120,6 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.OccurredAt);
 
             entity.HasIndex(x => new
-
-
-
-
-
-
             {
                 x.EntityType,
                 x.EntityId
@@ -355,7 +349,7 @@ public class ApplicationDbContext : DbContext
         });
 
         modelBuilder.Entity<FinancialLedgerEntry>(entity =>
-{
+        {
             entity.ToTable("FinancialLedgerEntries");
 
             entity.HasKey(x => x.Id);
@@ -387,6 +381,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(x => x.CreatedAt)
                 .IsRequired();
 
+            entity.Property(x => x.DeductionId);
+
             entity.HasOne(x => x.Farmer)
                 .WithMany()
                 .HasForeignKey(x => x.FarmerId)
@@ -398,13 +394,6 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(x => new
-
-            entity.HasIndex(x => x.DeductionId)
-                .IsUnique()
-                 .HasFilter("\"DeductionId\" IS NOT NULL");
-
-            entity.Property(x => x.DeductionId);
-            
             {
                 x.FarmerId,
                 x.OccurredAt
@@ -431,6 +420,10 @@ public class ApplicationDbContext : DbContext
                     "CK_FinancialLedgerEntries_Amount",
                     "\"Amount\" > 0");
             });
+
+            entity.HasIndex(x => x.DeductionId)
+            .IsUnique()
+            .HasFilter("\"DeductionId\" IS NOT NULL");
         });
     }
 }
