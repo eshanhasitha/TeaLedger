@@ -318,6 +318,7 @@ public sealed class LoanService : ILoanService
             Id = Guid.NewGuid(),
             FarmerId = loan.FarmerId,
             CollectionId = null,
+            LoanRepaymentId = repayment.Id,
             TransactionType =
                 FinancialTransactionType.LoanRepayment,
             Direction = FinancialDirection.Debit,

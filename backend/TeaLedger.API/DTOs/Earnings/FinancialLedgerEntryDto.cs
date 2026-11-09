@@ -8,6 +8,10 @@ public sealed class FinancialLedgerEntryDto
 
     public Guid? CollectionId { get; set; }
 
+    public Guid? DeductionId { get; set; }
+
+    public Guid? LoanRepaymentId { get; set; }
+
     public FinancialTransactionType TransactionType { get; set; }
 
     public FinancialDirection Direction { get; set; }
