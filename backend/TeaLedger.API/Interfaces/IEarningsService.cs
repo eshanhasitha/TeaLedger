@@ -42,4 +42,10 @@ public interface IEarningsService
         DateOnly from,
         DateOnly to,
         CancellationToken ct);
+
+    Task<FarmerFinancialSummaryDto> GetFarmerFinancialSummaryAsync(
+        Guid farmerUserId,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken ct);
 }
