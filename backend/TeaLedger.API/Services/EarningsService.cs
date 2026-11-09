@@ -378,19 +378,30 @@ public sealed class EarningsService : IEarningsService
         }
 
         return await query
-            .OrderByDescending(x => x.OccurredAt)
-            .Select(x => new FinancialLedgerEntryDto
-            {
-                Id = x.Id,
-                CollectionId = x.CollectionId,
-                TransactionType = x.TransactionType,
-                Direction = x.Direction,
-                Amount = x.Amount,
-                Description = x.Description,
-                Reference = x.Reference,
-                OccurredAt = x.OccurredAt
-            })
-            .ToListAsync(ct);
+    .OrderByDescending(x => x.OccurredAt)
+    .Select(x => new FinancialLedgerEntryDto
+    {
+        Id = x.Id,
+
+        CollectionId = x.CollectionId,
+
+        DeductionId = x.DeductionId,
+
+        LoanRepaymentId = x.LoanRepaymentId,
+
+        TransactionType = x.TransactionType,
+
+        Direction = x.Direction,
+
+        Amount = x.Amount,
+
+        Description = x.Description,
+
+        Reference = x.Reference,
+
+        OccurredAt = x.OccurredAt
+    })
+    .ToListAsync(ct);
     }
 
     public async Task<EarningsReconciliationDto> ReconcileAsync(
