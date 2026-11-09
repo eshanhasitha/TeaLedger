@@ -1,18 +1,24 @@
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { DashboardProvider } from './context/DashboardContext';
-import { AppRoutes } from './routes/AppRoutes';
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { LedgerProvider } from './context/LedgerContext'
+import { NotificationProvider } from './context/NotificationContext'
+import { ThemeProvider } from './context/ThemeContext'
+import { AppRoutes } from './routes/AppRoutes'
 
 function App() {
   return (
-    <BrowserRouter>
+    <ThemeProvider>
       <AuthProvider>
-        <DashboardProvider>
-          <AppRoutes />
-        </DashboardProvider>
+        <LedgerProvider>
+          <NotificationProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </NotificationProvider>
+        </LedgerProvider>
       </AuthProvider>
-    </BrowserRouter>
-  );
+    </ThemeProvider>
+  )
 }
 
 export default App;

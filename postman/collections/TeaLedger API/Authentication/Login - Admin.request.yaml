@@ -1,0 +1,30 @@
+$kind: http-request
+name: Admin login
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "phoneNumber": "{{adminPhoneNumber}}",
+      "password": "{{adminPassword}}"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 200) {
+          const body = pm.response.json();
+          if (body.accessToken) {
+              pm.environment.set("accessToken", body.accessToken);
+          }
+      }
+      pm.test("Admin login returns an access token", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json().accessToken).to.be.a("string").and.not.empty;
+          pm.expect(pm.response.json().role).to.eql("Admin");
+      });
+order: 3200

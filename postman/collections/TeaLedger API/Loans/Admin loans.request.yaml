@@ -1,0 +1,7 @@
+$kind: http-request
+name: Admin loans
+url: "{{baseUrl}}/api/loans/admin"
+method: GET
+auth:
+  type: inherit
+order: 7000

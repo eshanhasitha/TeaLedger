@@ -1,3 +1,4 @@
+
 namespace TeaLedger.API.Models;
 
 public class Farmer
@@ -5,6 +6,8 @@ public class Farmer
     public Guid Id { get; set; }
 
     public Guid UserId { get; set; }
+
+    public Guid? CollectorId { get; set; }
 
     public string FarmerCode { get; set; } = string.Empty;
 
@@ -14,5 +17,9 @@ public class Farmer
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public bool IsActive { get; set; } = true;
+
     public User User { get; set; } = null!;
+
+    public Collector? Collector { get; set; }
 }

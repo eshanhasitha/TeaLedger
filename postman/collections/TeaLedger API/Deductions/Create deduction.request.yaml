@@ -1,0 +1,21 @@
+$kind: http-request
+name: Create deduction for farmer
+url: "{{baseUrl}}/api/deductions/farmers/{{farmerId}}"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "category": "{{deductionCategory}}",
+      "description": "{{deductionDescription}}",
+      "quantity": {{deductionQuantity}},
+      "unit": "{{deductionUnit}}",
+      "unitPrice": {{deductionUnitPrice}},
+      "occurredAt": "2026-11-08T10:00:00Z",
+      "notes": "{{deductionNotes}}"
+    }
+auth:
+  type: inherit
+order: 1000
