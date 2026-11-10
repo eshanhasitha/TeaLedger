@@ -4,6 +4,9 @@ variables:
   - key: json_web_token_0wat
     secret: true
     disabled: false
+  - key: json_web_token_01zi
+    secret: true
+    disabled: false
 auth:
   - id: 0356ce15-490b-403b-9b3b-ea9724d3dffc
     type: bearer

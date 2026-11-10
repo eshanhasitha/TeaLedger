@@ -51,6 +51,9 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new LoanRepaymentConfiguration());
 
+        modelBuilder.ApplyConfiguration(
+            new LoanRepaymentLedgerConfiguration());
+
         modelBuilder.ApplyConfiguration(new DeductionConfiguration());
 
         modelBuilder.Entity<User>()

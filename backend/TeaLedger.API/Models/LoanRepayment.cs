@@ -19,4 +19,5 @@ public sealed class LoanRepayment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Loan Loan { get; set; } = null!;
+    public FinancialLedgerEntry? LedgerEntry { get; set; }
 }
