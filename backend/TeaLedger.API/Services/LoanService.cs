@@ -197,7 +197,7 @@ public sealed class LoanService : ILoanService
             CollectionId = null,
             TransactionType =
                 FinancialTransactionType.LoanDisbursement,
-            Direction = FinancialDirection.Debit,
+            Direction = FinancialDirection.Credit,
             Amount = amount,
             Description = "Loan issued to farmer",
             Reference = loan.Id.ToString(),

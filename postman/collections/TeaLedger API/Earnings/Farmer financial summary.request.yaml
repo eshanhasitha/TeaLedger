@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}api/earnings/farmer/financial-summary?from={{fromDate}}&to={{toDate}}"
+method: GET
+queryParams:
+  from: "{{fromDate}}"
+  to: "{{toDate}}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_01zi}}"
+order: 5000

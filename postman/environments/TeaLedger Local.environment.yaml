@@ -35,17 +35,17 @@ values:
   - key: collectorId
     value: ''
   - key: deductionCategory
-    value: 'Fertilizer'
+    value: Fertilizer
   - key: deductionDescription
-    value: 'Fertilizer purchase'
+    value: Fertilizer purchase
   - key: deductionQuantity
     value: '2'
   - key: deductionUnit
-    value: 'kg'
+    value: kg
   - key: deductionUnitPrice
     value: '1500.00'
   - key: deductionNotes
-    value: 'November fertilizer'
+    value: November fertilizer
   - key: address
     value: ''
   - key: farmSizeHectares

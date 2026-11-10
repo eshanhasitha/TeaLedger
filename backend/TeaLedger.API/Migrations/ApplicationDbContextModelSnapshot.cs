@@ -339,6 +339,9 @@ namespace TeaLedger.API.Migrations
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("LoanRepaymentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("OccurredAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -356,6 +359,10 @@ namespace TeaLedger.API.Migrations
                     b.HasIndex("DeductionId")
                         .IsUnique()
                         .HasFilter("\"DeductionId\" IS NOT NULL");
+
+                    b.HasIndex("LoanRepaymentId")
+                        .IsUnique()
+                        .HasFilter("\"LoanRepaymentId\" IS NOT NULL");
 
                     b.HasIndex("CollectionId", "TransactionType")
                         .IsUnique()
@@ -766,11 +773,18 @@ namespace TeaLedger.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TeaLedger.API.Models.LoanRepayment", "LoanRepayment")
+                        .WithOne("LedgerEntry")
+                        .HasForeignKey("TeaLedger.API.Models.FinancialLedgerEntry", "LoanRepaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Collection");
 
                     b.Navigation("Deduction");
 
                     b.Navigation("Farmer");
+
+                    b.Navigation("LoanRepayment");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Loan", b =>
@@ -889,6 +903,11 @@ namespace TeaLedger.API.Migrations
             modelBuilder.Entity("TeaLedger.API.Models.Loan", b =>
                 {
                     b.Navigation("Repayments");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.LoanRepayment", b =>
+                {
+                    b.Navigation("LedgerEntry");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.User", b =>
