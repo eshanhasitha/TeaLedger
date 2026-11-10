@@ -128,38 +128,38 @@ public sealed class EarningsController : ControllerBase
     }
 
     // GET api/earnings/farmer/financial-summary
-//     ?from=2026-11-01&to=2026-11-30
+    //     ?from=2026-11-01&to=2026-11-30
 
-[HttpGet("farmer/financial-summary")]
-[Authorize(Policy = AuthorizationPolicies.FarmerOnly)]
-public async Task<IActionResult> FarmerFinancialSummary(
-    [FromQuery] DateOnly from,
-    [FromQuery] DateOnly to,
-    CancellationToken ct)
-{
-    try
+    [HttpGet("farmer/financial-summary")]
+    [Authorize(Policy = AuthorizationPolicies.FarmerOnly)]
+    public async Task<IActionResult> FarmerFinancialSummary(
+        [FromQuery] DateOnly from,
+        [FromQuery] DateOnly to,
+        CancellationToken ct)
     {
-        var result =
-            await _service.GetFarmerFinancialSummaryAsync(
-                GetCurrentUserId(),
-                from,
-                to,
-                ct);
-
-        return Ok(result);
-    }
-    catch (ArgumentException ex)
-    {
-        return BadRequest(new
+        try
         {
-            message = ex.Message
-        });
+            var result =
+                await _service.GetFarmerFinancialSummaryAsync(
+                    GetCurrentUserId(),
+                    from,
+                    to,
+                    ct);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
-    catch (UnauthorizedAccessException)
-    {
-        return Forbid();
-    }
-}
 
     // GET api/earnings/collector/summary?from=2026-11-01&to=2026-11-30
     [HttpGet("collector/summary")]
