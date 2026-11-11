@@ -32,6 +32,10 @@ public sealed class FinancialLedgerEntry
 
     public LoanRepayment? LoanRepayment { get; set; } 
 
+    public Guid? SettlementId { get; set; }
+
+    public Settlement? Settlement { get; set; }
+
     public FinancialTransactionType TransactionType { get; set; }
 
     public FinancialDirection Direction { get; set; }

@@ -1,0 +1,10 @@
+$kind: http-request
+name: Farmer view own settlement
+description: Requires a Farmer JWT from Authentication / Farmer login. Uses settlementId from the environment.
+url: "{{baseUrl}}/api/settlements/farmer/{{settlementId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 5000

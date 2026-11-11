@@ -230,6 +230,10 @@ builder.Services.AddScoped<
     IDeductionService,
     DeductionService>();
 
+builder.Services.AddScoped<
+    ISettlementService,
+    SettlementService>();
+
 builder.Services.AddCors(
     options =>
     {

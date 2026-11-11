@@ -349,6 +349,9 @@ namespace TeaLedger.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("SettlementId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("TransactionType")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -363,6 +366,10 @@ namespace TeaLedger.API.Migrations
                     b.HasIndex("LoanRepaymentId")
                         .IsUnique()
                         .HasFilter("\"LoanRepaymentId\" IS NOT NULL");
+
+                    b.HasIndex("SettlementId")
+                        .IsUnique()
+                        .HasFilter("\"SettlementId\" IS NOT NULL");
 
                     b.HasIndex("CollectionId", "TransactionType")
                         .IsUnique()
@@ -449,6 +456,13 @@ namespace TeaLedger.API.Migrations
 
                     b.Property<DateTime>("PaidAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Cash");
 
                     b.Property<Guid>("RecordedByUserId")
                         .HasColumnType("uuid");
@@ -544,6 +558,131 @@ namespace TeaLedger.API.Migrations
                     b.HasIndex("FarmerId", "RecordedAt");
 
                     b.ToTable("PassbookEntries", (string)null);
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.Settlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AverageTeaPricePerKg")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FarmerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("GrossTeaIncome")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<decimal>("LoanRepayments")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<decimal>("MaterialDeductions")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NetSettlementAmount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("RemainingLoanBalance")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("TotalDeductionQuantityKg")
+                        .HasPrecision(14, 3)
+                        .HasColumnType("numeric(14,3)");
+
+                    b.Property<decimal>("TotalTeaQuantityKg")
+                        .HasPrecision(14, 3)
+                        .HasColumnType("numeric(14,3)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmerId", "Year", "Month")
+                        .IsUnique();
+
+                    b.HasIndex("Year", "Month", "Status");
+
+                    b.ToTable("Settlements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Settlements_Amounts", "\"GrossTeaIncome\" >= 0 AND \"MaterialDeductions\" >= 0 AND \"LoanRepayments\" >= 0 AND \"RemainingLoanBalance\" >= 0 AND \"NetSettlementAmount\" >= 0");
+
+                            t.HasCheckConstraint("CK_Settlements_Month", "\"Month\" >= 1 AND \"Month\" <= 12");
+
+                            t.HasCheckConstraint("CK_Settlements_QuantitiesAndPrice", "\"TotalTeaQuantityKg\" >= 0 AND \"AverageTeaPricePerKg\" >= 0 AND \"TotalDeductionQuantityKg\" >= 0");
+
+                            t.HasCheckConstraint("CK_Settlements_Year", "\"Year\" >= 2020 AND \"Year\" <= 2100");
+                        });
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.SettlementDeductionBreakdown", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(14, 3)
+                        .HasColumnType("numeric(14,3)");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId", "Category", "Unit", "UnitPrice")
+                        .IsUnique();
+
+                    b.ToTable("SettlementDeductionBreakdowns", (string)null);
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.TeaPrice", b =>
@@ -778,6 +917,11 @@ namespace TeaLedger.API.Migrations
                         .HasForeignKey("TeaLedger.API.Models.FinancialLedgerEntry", "LoanRepaymentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("TeaLedger.API.Models.Settlement", "Settlement")
+                        .WithOne("PaymentLedgerEntry")
+                        .HasForeignKey("TeaLedger.API.Models.FinancialLedgerEntry", "SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Collection");
 
                     b.Navigation("Deduction");
@@ -785,6 +929,8 @@ namespace TeaLedger.API.Migrations
                     b.Navigation("Farmer");
 
                     b.Navigation("LoanRepayment");
+
+                    b.Navigation("Settlement");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Loan", b =>
@@ -845,6 +991,28 @@ namespace TeaLedger.API.Migrations
                     b.Navigation("Collection");
 
                     b.Navigation("Farmer");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.Settlement", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Farmer", "Farmer")
+                        .WithMany()
+                        .HasForeignKey("FarmerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Farmer");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.SettlementDeductionBreakdown", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Settlement", "Settlement")
+                        .WithMany("DeductionBreakdown")
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Settlement");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.TeaPrice", b =>
@@ -908,6 +1076,13 @@ namespace TeaLedger.API.Migrations
             modelBuilder.Entity("TeaLedger.API.Models.LoanRepayment", b =>
                 {
                     b.Navigation("LedgerEntry");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.Settlement", b =>
+                {
+                    b.Navigation("DeductionBreakdown");
+
+                    b.Navigation("PaymentLedgerEntry");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.User", b =>

@@ -112,6 +112,7 @@ public sealed class LoanService : ILoanService
                 Id = x.Id,
                 LoanId = x.LoanId,
                 Amount = x.Amount,
+                PaymentMethod = x.PaymentMethod,
                 PaidAt = x.PaidAt,
                 RecordedByUserId = x.RecordedByUserId,
                 Reference = x.Reference,
@@ -302,6 +303,7 @@ public sealed class LoanService : ILoanService
             Id = Guid.NewGuid(),
             LoanId = loan.Id,
             Amount = amount,
+            PaymentMethod = input.PaymentMethod,
             PaidAt = paidAt,
             RecordedByUserId = collectorUserId,
             Reference = string.IsNullOrWhiteSpace(input.Reference)
@@ -363,6 +365,7 @@ public sealed class LoanService : ILoanService
             Id = repayment.Id,
             LoanId = repayment.LoanId,
             Amount = repayment.Amount,
+            PaymentMethod = repayment.PaymentMethod,
             PaidAt = repayment.PaidAt,
             RecordedByUserId = repayment.RecordedByUserId,
             Reference = repayment.Reference,

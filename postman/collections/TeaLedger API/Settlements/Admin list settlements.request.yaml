@@ -1,0 +1,12 @@
+$kind: http-request
+name: Admin list settlements
+url: "{{baseUrl}}/api/settlements/admin?year={{year}}&month={{month}}"
+method: GET
+queryParams:
+  year: "{{year}}"
+  month: "{{month}}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 2000
