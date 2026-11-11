@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { AuthHero } from '../../components/layout/AuthHero';
 import { ForgotPasswordModal } from '../../components/modals/ForgotPasswordModal';
 import { SystemStatusModal } from '../../components/modals/SystemStatusModal';
@@ -18,7 +18,7 @@ import logoImg from '../../assets/logo.png';
 
 interface LocationState {
   from?: {
-    pathname?: string;
+    pathname: string;
   };
 }
 

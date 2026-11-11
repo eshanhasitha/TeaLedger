@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { X, UserPlus, Check } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const AddFarmerModal = () => {
-  const { isAddFarmerModalOpen, setIsAddFarmerModalOpen, addFarmer, farmers } = useDashboard();
+  const { isAddFarmerModalOpen, setIsAddFarmerModalOpen, addFarmer } = useDashboard();
 
   const [name, setName] = useState('');
-  const [code, setCode] = useState(`TR-${1000 + farmers.length}`);
+  const [code, setCode] = useState('TR-1082');
   const [division, setDivision] = useState('Norwood Div 02');
   const [phone, setPhone] = useState('+94 7');
   const [nic, setNic] = useState('');

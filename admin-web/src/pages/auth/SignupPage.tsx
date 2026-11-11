@@ -12,7 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { AuthHero } from '../../components/layout/AuthHero';
 import { SystemStatusModal } from '../../components/modals/SystemStatusModal';
 import logoImg from '../../assets/logo.png';

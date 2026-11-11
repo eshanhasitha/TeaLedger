@@ -1,6 +1,6 @@
 import React from 'react';
 import { Truck, Navigation, Wind, Thermometer } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const EstateLogisticsGrid: React.FC = () => {
   const { stationStatus } = useDashboard();

@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 import type { IntakeSlip } from '../../types/dashboard.types';
 
 export const RecentIntakeLogsTable = () => {
@@ -126,7 +126,7 @@ export const RecentIntakeLogsTable = () => {
           <div className="relative">
             <select
               value={statusFilter}
-              onChange={handleStatusFilterChange}
+onChange={handleStatusFilterChange}
               className="appearance-none rounded-xl border border-[#ded8cc] bg-[#fbf9f5] px-3 py-1.5 pr-8 text-xs font-semibold text-slate-700 hover:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
             >
               <option value="All">All Statuses</option>
