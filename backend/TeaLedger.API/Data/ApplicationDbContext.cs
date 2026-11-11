@@ -41,6 +41,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
     public DbSet<Deduction> Deductions => Set<Deduction>();
+    public DbSet<Settlement> Settlements => Set<Settlement>();
+
+    public DbSet<SettlementDeductionBreakdown> SettlementDeductionBreakdowns
+        => Set<SettlementDeductionBreakdown>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
@@ -55,6 +59,11 @@ public class ApplicationDbContext : DbContext
             new LoanRepaymentLedgerConfiguration());
 
         modelBuilder.ApplyConfiguration(new DeductionConfiguration());
+
+        modelBuilder.ApplyConfiguration(new SettlementConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new SettlementDeductionBreakdownConfiguration());
 
         modelBuilder.Entity<User>()
             .HasIndex(x => x.PhoneNumber)
@@ -427,6 +436,13 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.DeductionId)
             .IsUnique()
             .HasFilter("\"DeductionId\" IS NOT NULL");
-        });
+
+            entity.HasIndex(x => x.SettlementId)
+                .IsUnique()
+                .HasFilter("\"SettlementId\" IS NOT NULL");
+        }
+
+        );
+
     }
 }

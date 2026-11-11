@@ -11,6 +11,7 @@ public sealed class FinancialLedgerEntryDto
     public Guid? DeductionId { get; set; }
 
     public Guid? LoanRepaymentId { get; set; }
+    public Guid? SettlementId { get; set; }
 
     public FinancialTransactionType TransactionType { get; set; }
 
@@ -23,4 +24,5 @@ public sealed class FinancialLedgerEntryDto
     public string? Reference { get; set; }
 
     public DateTime OccurredAt { get; set; }
+    public Settlement? Settlement { get; set; }
 }
