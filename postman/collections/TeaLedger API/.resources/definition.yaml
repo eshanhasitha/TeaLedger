@@ -1,5 +1,5 @@
 $kind: collection
-description: Local API requests for health, authentication, farmer and collector management, earnings, deductions, loans, profiles, and role dashboards.
+description: Local API requests for health, authentication, farmer and collector management, earnings, deductions, reports, loans, profiles, and role dashboards.
 variables:
   - key: json_web_token_0wat
     secret: true
