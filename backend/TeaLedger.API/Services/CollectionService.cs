@@ -10,8 +10,15 @@ namespace TeaLedger.API.Services;
 public class CollectionService : ICollectionService
 {
     private readonly ApplicationDbContext _db;
+    private readonly INotificationService _notifications;
 
-    public CollectionService(ApplicationDbContext db) => _db = db;
+    public CollectionService(
+        ApplicationDbContext db,
+        INotificationService notifications)
+    {
+        _db = db;
+        _notifications = notifications;
+    }
 
     public async Task<CollectionDto> CreateAsync(Guid collectorUserId, CreateCollectionDto input, CancellationToken ct)
     {
@@ -46,6 +53,14 @@ public class CollectionService : ICollectionService
         request.RespondedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
+        await _notifications.NotifyAsync(
+        request.Farmer.UserId,
+        "Tea collection confirmed",
+        $"Your tea collection has been recorded. " +
+        $"Collection ID: {collection.Id}",
+        "Collection",
+        collection.Id,
+        ct);
         return Map(collection, request.Farmer);
     }
 

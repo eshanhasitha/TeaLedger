@@ -268,6 +268,44 @@ namespace TeaLedger.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.DeviceToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "IsActive");
+
+                    b.ToTable("DeviceTokens", (string)null);
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.Farmer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -878,6 +916,17 @@ namespace TeaLedger.API.Migrations
                     b.Navigation("Collector");
 
                     b.Navigation("Farmer");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.DeviceToken", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.Farmer", b =>

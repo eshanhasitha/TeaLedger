@@ -1,0 +1,27 @@
+$kind: http-request
+name: Farmer submits tea-ready request
+url: "{{baseUrl}}/api/collection-requests"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "estimatedQuantityKg": {{estimatedQuantityKg}}
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Tea-ready request created", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json().id).to.be.a("string");
+      });
+      if (pm.response.code === 200 && pm.response.json().id) {
+          pm.environment.set("collectionRequestId", pm.response.json().id);
+      }
+order: 5000
