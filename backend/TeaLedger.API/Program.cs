@@ -201,6 +201,7 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<CollectionRequestService>();
 builder.Services.AddScoped<ICollectionService, CollectionService>();
+builder.Services.AddScoped<DashboardService>();
 
 builder.Services.AddScoped<
     INotificationService,

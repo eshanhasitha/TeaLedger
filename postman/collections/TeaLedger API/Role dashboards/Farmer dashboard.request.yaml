@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/farmer/dashboard"
+url: "{{baseUrl}}/api/dashboard/farmer?from={{fromDate}}&to={{toDate}}"
 method: GET
 auth:
   type: inherit
