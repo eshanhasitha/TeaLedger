@@ -78,3 +78,15 @@ values:
     value: '11'
   - key: loanRepaymentAmount
     value: '0'
+  - key: deviceToken
+    value: ''
+  - key: devicePlatform
+    value: android
+  - key: notificationId
+    value: ''
+  - key: collectionRequestId
+    value: ''
+  - key: estimatedQuantityKg
+    value: '5'
+  - key: collectorNote
+    value: Postman notification test

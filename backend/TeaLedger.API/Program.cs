@@ -198,18 +198,18 @@ builder.Services.AddScoped<
     IActivityLogService,
     ActivityLogService>();
 
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<CollectionRequestService>();
-builder.Services.AddScoped<ICollectionService, CollectionService>();
-builder.Services.AddScoped<DashboardService>();
-builder.Services.AddScoped<ReportService>();
+builder.Services.AddSingleton<
+    IPushNotificationSender,
+    FirebasePushNotificationSender>();
 
 builder.Services.AddScoped<
     INotificationService,
     NotificationService>();
 
-builder.Services.AddScoped<
-    CollectionRequestService>();
+builder.Services.AddScoped<CollectionRequestService>();
+builder.Services.AddScoped<ICollectionService, CollectionService>();
+builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ReportService>();
 
 builder.Services.AddScoped<
     CollectionService>();
