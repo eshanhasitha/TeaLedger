@@ -106,6 +106,18 @@ public class ApplicationDbContext : DbContext
             .HasOne(x => x.PassbookEntry)
             .WithOne(x => x.Collection)
             .HasForeignKey<PassbookEntry>(x => x.CollectionId);
+
+        modelBuilder.Entity<Deduction>()
+            .HasIndex(x => new { x.FarmerId, x.OccurredAt });
+
+        modelBuilder.Entity<Deduction>()
+            .HasIndex(x => x.OccurredAt);
+
+        modelBuilder.Entity<Loan>()
+            .HasIndex(x => x.FarmerId);
+
+        modelBuilder.Entity<LoanRepayment>()
+            .HasIndex(x => new { x.LoanId, x.PaidAt });
         
         modelBuilder.ApplyConfiguration(
             new CollectorConfiguration());

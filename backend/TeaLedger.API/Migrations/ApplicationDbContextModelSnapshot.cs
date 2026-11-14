@@ -250,6 +250,8 @@ namespace TeaLedger.API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OccurredAt");
+
                     b.HasIndex("Category", "OccurredAt");
 
                     b.HasIndex("CollectorId", "OccurredAt");
@@ -423,6 +425,8 @@ namespace TeaLedger.API.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FarmerId");
 
                     b.HasIndex("CollectorId", "Status", "IssuedAt");
 
