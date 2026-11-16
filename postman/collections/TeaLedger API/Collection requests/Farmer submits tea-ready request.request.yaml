@@ -24,4 +24,4 @@ scripts:
       if (pm.response.code === 200 && pm.response.json().id) {
           pm.environment.set("collectionRequestId", pm.response.json().id);
       }
-order: 5000
+order: 1000

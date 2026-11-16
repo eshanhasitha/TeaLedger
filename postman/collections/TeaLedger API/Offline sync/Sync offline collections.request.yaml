@@ -1,0 +1,33 @@
+$kind: http-request
+name: Sync offline collections
+url: "{{baseUrl}}/api/sync/collections"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "collections": [
+        {
+          "clientOperationId": "{{clientOperationId}}",
+          "requestId": "{{collectionRequestId}}",
+          "collectedAt": "{{collectedAt}}"
+        }
+      ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Offline collection sync returns a result", function () {
+          pm.response.to.have.status(200);
+          const response = pm.response.json();
+          pm.expect(response.total).to.eql(1);
+          pm.expect(response.results).to.have.lengthOf(1);
+          pm.expect(response.results[0].clientOperationId).to.eql(pm.variables.get("clientOperationId"));
+      });
+order: 8000
