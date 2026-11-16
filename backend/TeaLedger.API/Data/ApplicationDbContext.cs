@@ -488,52 +488,52 @@ public class ApplicationDbContext : DbContext
             });
         });
 
-modelBuilder.Entity<OfflineCollectionSync>(entity =>
-{
-    entity.ToTable("OfflineCollectionSyncs");
+        modelBuilder.Entity<OfflineCollectionSync>(entity =>
+        {
+            entity.ToTable("OfflineCollectionSyncs");
 
-    entity.HasKey(x => x.Id);
+            entity.HasKey(x => x.Id);
 
-    entity.Property(x => x.Status)
-        .HasConversion<string>()
-        .HasMaxLength(30)
-        .IsRequired();
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
 
-    entity.Property(x => x.ErrorMessage)
-        .HasMaxLength(1000);
+            entity.Property(x => x.ErrorMessage)
+                .HasMaxLength(1000);
 
-    // A collector cannot submit the same operation twice.
-    entity.HasIndex(x => new
-    {
-        x.CollectorUserId,
-        x.ClientOperationId
-    })
-    .IsUnique();
+            // A collector cannot submit the same operation twice.
+            entity.HasIndex(x => new
+            {
+                x.CollectorUserId,
+                x.ClientOperationId
+            })
+            .IsUnique();
 
-    entity.HasIndex(x => x.RequestId);
+            entity.HasIndex(x => x.RequestId);
 
-    entity.HasIndex(x => new
-    {
-        x.CollectorUserId,
-        x.Status,
-        x.ReceivedAt
-    });
+            entity.HasIndex(x => new
+            {
+                x.CollectorUserId,
+                x.Status,
+                x.ReceivedAt
+            });
 
-    entity.HasOne(x => x.CollectorUser)
-        .WithMany()
-        .HasForeignKey(x => x.CollectorUserId)
-        .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.CollectorUser)
+                .WithMany()
+                .HasForeignKey(x => x.CollectorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasOne(x => x.Request)
-        .WithMany()
-        .HasForeignKey(x => x.RequestId)
-        .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Request)
+                .WithMany()
+                .HasForeignKey(x => x.RequestId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasOne(x => x.Collection)
-        .WithMany()
-        .HasForeignKey(x => x.CollectionId)
-        .OnDelete(DeleteBehavior.Restrict);
-});
+            entity.HasOne(x => x.Collection)
+                .WithMany()
+                .HasForeignKey(x => x.CollectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
     }
 }
