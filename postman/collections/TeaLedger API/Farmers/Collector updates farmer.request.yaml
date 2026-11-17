@@ -1,0 +1,19 @@
+$kind: http-request
+name: Collector updates farmer
+url: "{{baseUrl}}/api/collector/farmers/{{farmerId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "farmerCode": "{{farmerCode}}",
+      "address": "{{address}}",
+      "farmSizeHectares": {{farmSizeHectares}}
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 4000

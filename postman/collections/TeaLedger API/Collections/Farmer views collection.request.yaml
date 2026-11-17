@@ -1,0 +1,9 @@
+$kind: http-request
+name: Farmer views collection
+url: "{{baseUrl}}/api/collections/{{collectionId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 4000

@@ -1,0 +1,9 @@
+$kind: http-request
+name: Farmer dashboard access check
+url: "{{baseUrl}}/api/farmer/dashboard"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 5000

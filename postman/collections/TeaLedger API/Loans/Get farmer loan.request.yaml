@@ -3,5 +3,7 @@ name: Get farmer loan
 url: "{{baseUrl}}/api/loans/farmer/{{loanId}}"
 method: GET
 auth:
-  type: inherit
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
 order: 6000

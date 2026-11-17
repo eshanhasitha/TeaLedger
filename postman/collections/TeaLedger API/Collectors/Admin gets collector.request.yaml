@@ -1,0 +1,9 @@
+$kind: http-request
+name: Admin gets collector
+url: "{{baseUrl}}/api/admin/collectors/{{collectorId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 2000

@@ -1,0 +1,9 @@
+$kind: http-request
+name: Collector lists assigned farmers
+url: "{{baseUrl}}/api/collector/farmers?page={{page}}&pageSize={{pageSize}}&search={{search}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 1000

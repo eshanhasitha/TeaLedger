@@ -1,5 +1,5 @@
 $kind: http-request
-name: Collector accepts tea-ready request
+name: Collector rejects tea-ready request
 url: "{{baseUrl}}/api/collection-requests/{{collectionRequestId}}/decision"
 method: PATCH
 headers:
@@ -8,18 +8,11 @@ body:
   type: json
   content: |-
     {
-      "decision": "accept",
+      "decision": "reject",
       "note": "{{collectorNote}}"
     }
 auth:
   type: bearer
   credentials:
     token: "{{collectorAccessToken}}"
-scripts:
-  - type: afterResponse
-    code: |-
-      pm.test("Collector accepts the request", function () {
-          pm.response.to.have.status(200);
-          pm.expect(pm.response.json().status).to.eql(1);
-      });
-order: 6000
+order: 5000

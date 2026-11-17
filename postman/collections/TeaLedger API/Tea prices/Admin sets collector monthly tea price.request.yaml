@@ -1,0 +1,20 @@
+$kind: http-request
+name: Admin sets collector monthly tea price
+url: "{{baseUrl}}/api/tea-prices/admin/collectors/{{collectorId}}/monthly"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "year": {{year}},
+      "month": {{month}},
+      "pricePerKg": {{pricePerKg}},
+      "effectiveFrom": "{{priceEffectiveFrom}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 4000

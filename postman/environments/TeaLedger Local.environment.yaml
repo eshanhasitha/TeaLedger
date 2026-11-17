@@ -90,3 +90,35 @@ values:
     value: '5'
   - key: collectorNote
     value: Postman notification test
+  - key: clientOperationId
+    value: ''
+  - key: collectedAt
+    value: '2026-11-16T10:00:00Z'
+  - key: collectionRequestStatus
+    value: Accepted
+  - key: collectionId
+    value: ''
+  - key: search
+    value: ''
+  - key: priceDate
+    value: '2026-11-16'
+  - key: pricePerKg
+    value: '250.00'
+  - key: priceEffectiveFrom
+    value: '2026-11-01T00:00:00Z'
+  - key: grossWeight
+    value: '10'
+  - key: waterReduction
+    value: '0'
+  - key: bagWeight
+    value: '0'
+  - key: otherReduction
+    value: '0'
+  - key: area
+    value: ''
+  - key: activeStatus
+    value: 'true'
+  - key: farmerUserId
+    value: ''
+  - key: loanId
+    value: ''

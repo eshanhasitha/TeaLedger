@@ -1,0 +1,9 @@
+$kind: http-request
+name: Admin lists collections
+url: "{{baseUrl}}/api/admin/collections?from={{fromDate}}&to={{toDate}}&farmerId={{farmerId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 5000

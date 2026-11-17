@@ -565,6 +565,56 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("Notifications", (string)null);
                 });
 
+            modelBuilder.Entity("TeaLedger.API.Models.OfflineCollectionSync", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ClientCollectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ClientOperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CollectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CollectorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("SyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId");
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("CollectorUserId", "ClientOperationId")
+                        .IsUnique();
+
+                    b.HasIndex("CollectorUserId", "Status", "ReceivedAt");
+
+                    b.ToTable("OfflineCollectionSyncs", (string)null);
+                });
+
             modelBuilder.Entity("TeaLedger.API.Models.PassbookEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1025,6 +1075,32 @@ namespace TeaLedger.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeaLedger.API.Models.OfflineCollectionSync", b =>
+                {
+                    b.HasOne("TeaLedger.API.Models.Collection", "Collection")
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TeaLedger.API.Models.User", "CollectorUser")
+                        .WithMany()
+                        .HasForeignKey("CollectorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TeaLedger.API.Models.CollectionRequest", "Request")
+                        .WithMany()
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("CollectorUser");
+
+                    b.Navigation("Request");
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.PassbookEntry", b =>
