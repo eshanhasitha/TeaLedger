@@ -210,6 +210,7 @@ builder.Services.AddScoped<CollectionRequestService>();
 builder.Services.AddScoped<ICollectionService, CollectionService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<OfflineCollectionSyncService>();
 
 builder.Services.AddScoped<
     CollectionService>();
