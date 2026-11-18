@@ -217,6 +217,25 @@ public class OfflineCollectionSyncServiceTests
         await using var db = CreateDb();
         var seeded = await SeedAcceptedRequest(db);
 
+        var otherCollectorUser = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Another Collector",
+            PhoneNumber = "0771000003",
+            PasswordHash = "test",
+            Role = UserRole.Collector,
+            IsActive = true
+        };
+        db.Users.Add(otherCollectorUser);
+        db.Collectors.Add(new Collector
+        {
+            Id = Guid.NewGuid(),
+            UserId = otherCollectorUser.Id,
+            CollectorCode = "COL-OTHER",
+            User = otherCollectorUser
+        });
+        await db.SaveChangesAsync();
+
         var notifications = new FakeNotificationService();
 
         var service = new OfflineCollectionSyncService(
@@ -225,7 +244,7 @@ public class OfflineCollectionSyncServiceTests
             NullLogger<OfflineCollectionSyncService>.Instance);
 
         var result = await service.SyncAsync(
-            Guid.NewGuid(),
+            otherCollectorUser.Id,
             new SyncCollectionsRequest
             {
                 Collections =

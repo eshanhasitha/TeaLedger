@@ -111,16 +111,11 @@ public class WeightVerificationService
             .OrderByDescending(x => x.EffectiveFrom)
             .FirstOrDefaultAsync(ct);
 
-        if (applicablePrice is null)
-        {
-            throw new InvalidOperationException(
-                "No tea price is configured for the collection date. " +
-                "Please set the monthly tea price before verifying this collection.");
-        }
-
-        var totalAmount = TeaPriceService.CalculateAmount(
-            finalWeight,
-            applicablePrice.PricePerKg);
+        var totalAmount = applicablePrice is null
+            ? 0m
+            : TeaPriceService.CalculateAmount(
+                finalWeight,
+                applicablePrice.PricePerKg);
 
         await using var transaction =
             await _db.Database.BeginTransactionAsync(ct);
@@ -131,7 +126,7 @@ public class WeightVerificationService
         collection.OtherReduction = input.OtherReduction;
         collection.FinalWeight = finalWeight;
         collection.Status = CollectionStatus.Collected;
-        collection.PricePerKg = applicablePrice.PricePerKg;
+        collection.PricePerKg = applicablePrice?.PricePerKg ?? 0m;
         collection.TotalAmount = totalAmount;
         collection.UpdatedAt = now;
 
@@ -159,43 +154,18 @@ public class WeightVerificationService
             RecordedAt = now
         };
 
-        var ledgerEntry = new FinancialLedgerEntry
-        {
-            Id = Guid.NewGuid(),
-            FarmerId = collection.FarmerId,
-            CollectionId = collection.Id,
-            TransactionType =
-                FinancialTransactionType.CollectionEarning,
-            Direction = FinancialDirection.Credit,
-            Amount = totalAmount,
-            Description = "Verified tea collection earning",
-            Reference = collection.Id.ToString(),
-            OccurredAt = now,
-            CreatedAt = now
-        };
-
-        var auditEntry = new ActivityLog
-        {
-            Id = Guid.NewGuid(),
-            ActorUserId = collectorUserId,
-            Action = "CollectionEarningRecorded",
-            EntityType = "FinancialLedgerEntry",
-            EntityId = ledgerEntry.Id,
-            Details =
-                $"CollectionId={collection.Id}; " +
-                $"FarmerId={collection.FarmerId}; " +
-                $"FinalWeight={finalWeight}; " +
-                $"PricePerKg={applicablePrice.PricePerKg}; " +
-                $"Amount={totalAmount}",
-            OccurredAt = now
-        };
-
         _db.WeightVerifications.Add(verification);
         _db.PassbookEntries.Add(passbookEntry);
-        _db.FinancialLedgerEntries.Add(ledgerEntry);
-        _db.ActivityLogs.Add(auditEntry);
 
         await _db.SaveChangesAsync(ct);
+        await _activityLog.RecordAsync(
+            collectorUserId,
+            "CollectionWeightVerified",
+            nameof(Collection),
+            collection.Id,
+            $"FinalWeight={finalWeight}; " +
+            $"MonthlyPriceAvailable={applicablePrice is not null}",
+            ct);
         await transaction.CommitAsync(ct);
 
         return new PassbookEntryDto

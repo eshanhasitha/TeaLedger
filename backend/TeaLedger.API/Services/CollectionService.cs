@@ -9,58 +9,125 @@ namespace TeaLedger.API.Services;
 
 public class CollectionService : ICollectionService
 {
+
     private readonly ApplicationDbContext _db;
     private readonly INotificationService _notifications;
+    private readonly ILogger<CollectionService> _logger;
 
     public CollectionService(
         ApplicationDbContext db,
-        INotificationService notifications)
+        INotificationService notifications,
+        ILogger<CollectionService> logger)
     {
         _db = db;
         _notifications = notifications;
+        _logger = logger;
     }
 
-    public async Task<CollectionDto> CreateAsync(Guid collectorUserId, CreateCollectionDto input, CancellationToken ct)
+
+    public async Task<CollectionDto> CreateAsync(
+        Guid collectorUserId,
+        CreateCollectionDto input,
+        CancellationToken ct)
     {
-        var collector = await _db.Collectors.SingleOrDefaultAsync(x => x.UserId == collectorUserId, ct)
-            ?? throw new UnauthorizedAccessException("Collector profile not found.");
+        var collector = await _db.Collectors
+            .SingleOrDefaultAsync(
+                x => x.UserId == collectorUserId,
+                ct)
+            ?? throw new UnauthorizedAccessException(
+                "Collector profile not found.");
 
         var request = await _db.CollectionRequests
-            .Include(x => x.Farmer).ThenInclude(x => x.User)
-            .SingleOrDefaultAsync(x => x.Id == input.RequestId && x.Farmer.CollectorId == collector.Id, ct)
-            ?? throw new InvalidOperationException("Request was not found for this collector.");
+            .Include(x => x.Farmer)
+                .ThenInclude(x => x.User)
+            .SingleOrDefaultAsync(
+                x => x.Id == input.RequestId &&
+                    x.Farmer.CollectorId == collector.Id,
+                ct)
+            ?? throw new InvalidOperationException(
+                "Request was not found for this collector.");
 
         if (request.Status != CollectionRequestStatus.Accepted)
-            throw new InvalidOperationException("Only accepted requests can be collected.");
-        if (!request.Farmer.IsActive || !request.Farmer.User.IsActive)
-            throw new InvalidOperationException("Farmer account is inactive.");
-        if (await _db.Collections.AnyAsync(x => x.RequestId == request.Id, ct))
-            throw new InvalidOperationException("A collection already exists for this request.");
+        {
+            throw new InvalidOperationException(
+                "Only accepted requests can be collected.");
+        }
 
-        var now = input.CollectedAt?.ToUniversalTime() ?? DateTime.UtcNow;
+        if (!request.Farmer.IsActive ||
+            !request.Farmer.User.IsActive)
+        {
+            throw new InvalidOperationException(
+                "Farmer account is inactive.");
+        }
+
+        var alreadyExists = await _db.Collections
+            .AnyAsync(x => x.RequestId == request.Id, ct);
+
+        if (alreadyExists)
+        {
+            throw new InvalidOperationException(
+                "A collection already exists for this request.");
+        }
+
+        var now = DateTime.UtcNow;
+        var collectedAt = input.CollectedAt?.ToUniversalTime() ?? now;
+
         var collection = new Collection
         {
-            Id = Guid.NewGuid(), RequestId = request.Id, FarmerId = request.FarmerId,
-            CollectorId = collector.Id, GrossWeight = 0, WaterReduction = 0,
-            BagWeight = 0, OtherReduction = 0, FinalWeight = 0,
-            PricePerKg = 0, TotalAmount = 0, Status = CollectionStatus.Pending,
-            CollectedAt = now, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
+            Id = Guid.NewGuid(),
+            RequestId = request.Id,
+            FarmerId = request.FarmerId,
+            CollectorId = collector.Id,
+
+            GrossWeight = 0,
+            WaterReduction = 0,
+            BagWeight = 0,
+            OtherReduction = 0,
+            FinalWeight = 0,
+
+            PricePerKg = 0,
+            TotalAmount = 0,
+
+            Status = CollectionStatus.Pending,
+            CollectedAt = collectedAt,
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
-        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await using var transaction =
+            await _db.Database.BeginTransactionAsync(ct);
+
         _db.Collections.Add(collection);
+
         request.Status = CollectionRequestStatus.Collected;
-        request.RespondedAt = DateTime.UtcNow;
+        request.RespondedAt = now;
+
         await _db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
-        await _notifications.NotifyAsync(
-        request.Farmer.UserId,
-        "Tea collection confirmed",
-        $"Your tea collection has been recorded. " +
-        $"Collection ID: {collection.Id}",
-        "Collection",
-        collection.Id,
-        ct);
+
+        // The collection is already committed.
+        // A notification failure must not make the API report
+        // that collection creation failed.
+        try
+        {
+            await _notifications.NotifyAsync(
+                request.Farmer.UserId,
+                "Tea collection confirmed",
+                $"Your tea collection has been recorded. " +
+                $"Collection ID: {collection.Id}",
+                "Collection",
+                collection.Id,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Collection {CollectionId} was saved, " +
+                "but farmer notification failed.",
+                collection.Id);
+        }
+
         return Map(collection, request.Farmer);
     }
 
