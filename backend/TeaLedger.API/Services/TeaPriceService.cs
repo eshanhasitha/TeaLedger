@@ -130,13 +130,16 @@ public sealed class TeaPriceService : ITeaPriceService
         var pricedMonthStart = new DateTime(
             input.Year, input.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var pricedMonthEnd = pricedMonthStart.AddMonths(1);
+        
         var collections = await _db.Collections
-            .Where(x => x.CollectorId == collectorId &&
-                x.CollectedAt >= pricedMonthStart &&
+            .Where(x =>
+                x.CollectorId == collectorId &&
+                x.CollectedAt >= effectiveFrom &&
                 x.CollectedAt < pricedMonthEnd &&
                 (x.Status == CollectionStatus.Collected ||
-                 x.Status == CollectionStatus.Synced))
+                x.Status == CollectionStatus.Synced))
             .ToListAsync(ct);
+
 
         foreach (var collection in collections)
         {

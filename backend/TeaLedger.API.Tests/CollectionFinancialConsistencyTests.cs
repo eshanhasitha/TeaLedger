@@ -6,6 +6,7 @@ using TeaLedger.API.Services;
 
 namespace TeaLedger.API.Tests;
 
+[Collection("PostgreSQL integration")]
 public sealed class CollectionFinancialConsistencyTests
 {
     [Fact]
@@ -70,8 +71,11 @@ public sealed class CollectionFinancialConsistencyTests
         Assert.Equal(0m, collection.TotalAmount);
     }
 
-    [Fact]
-    public async Task VerifyAsync_PersistsCollectionAndFinancialRecordsTogether_InPostgres()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task VerifyAsync_PersistsCollectionAndFinancialRecordsTogether_InPostgres(
+        bool priceConfiguredBeforeVerification)
     {
         var connectionString = Environment.GetEnvironmentVariable(
             "TEALEDGER_TEST_POSTGRES");
@@ -159,6 +163,14 @@ public sealed class CollectionFinancialConsistencyTests
         {
             await using (var db = new ApplicationDbContext(options))
             {
+                if (priceConfiguredBeforeVerification)
+                {
+                    await SetMonthlyPriceAsync(
+                        db,
+                        collectorUserId,
+                        collectedAt);
+                }
+
                 var service = new WeightVerificationService(
                     db,
                     new ActivityLogService(db));
@@ -176,26 +188,21 @@ public sealed class CollectionFinancialConsistencyTests
                     CancellationToken.None);
 
                 Assert.NotNull(result);
+                Assert.Equal(25.5m, result.FinalWeight);
 
-                Assert.Equal(0m, result.TotalAmount);
-
-                var priceService = new TeaPriceService(
-                    db,
-                    new ActivityLogService(db));
-                await priceService.SetMonthlyPriceForCollectorUserAsync(
-                    collectorUserId,
-                    new DTOs.TeaPrices.SetMonthlyTeaPriceDto
-                    {
-                        Year = collectedAt.Year,
-                        Month = collectedAt.Month,
-                        PricePerKg = 125m,
-                        EffectiveFrom = new DateTime(
-                            collectedAt.Year,
-                            collectedAt.Month,
-                            1,
-                            0, 0, 0, DateTimeKind.Utc)
-                    },
-                    CancellationToken.None);
+                if (priceConfiguredBeforeVerification)
+                {
+                    Assert.Equal(125m, result.PricePerKg);
+                    Assert.Equal(3187.50m, result.TotalAmount);
+                }
+                else
+                {
+                    Assert.Equal(0m, result.TotalAmount);
+                    await SetMonthlyPriceAsync(
+                        db,
+                        collectorUserId,
+                        collectedAt);
+                }
             }
 
             await using var verify = new ApplicationDbContext(options);
@@ -207,8 +214,11 @@ public sealed class CollectionFinancialConsistencyTests
                 .SingleAsync(x => x.CollectionId == collectionId);
             var ledger = await verify.FinancialLedgerEntries
                 .SingleAsync(x => x.CollectionId == collectionId);
-            var activity = await verify.ActivityLogs
-                .SingleAsync(x => x.EntityId == ledger.Id);
+            var activity = priceConfiguredBeforeVerification
+                ? await verify.ActivityLogs.SingleAsync(
+                    x => x.EntityId == collectionId)
+                : await verify.ActivityLogs.SingleAsync(
+                    x => x.EntityId == ledger.Id);
 
             Assert.Equal(CollectionStatus.Collected, collection.Status);
             Assert.Equal(25.5m, collection.FinalWeight);
@@ -221,12 +231,32 @@ public sealed class CollectionFinancialConsistencyTests
                 ledger.TransactionType);
             Assert.Equal(collection.FinalWeight, weightVerification.FinalWeight);
             Assert.Equal(collection.FinalWeight, passbook.FinalWeight);
-            Assert.Equal("CollectionEarningPriced", activity.Action);
-            Assert.Equal("FinancialLedgerEntry", activity.EntityType);
+            Assert.Equal(
+                priceConfiguredBeforeVerification
+                    ? "CollectionWeightVerified"
+                    : "CollectionEarningPriced",
+                activity.Action);
+            Assert.Equal(
+                priceConfiguredBeforeVerification
+                    ? "Collection"
+                    : "FinancialLedgerEntry",
+                activity.EntityType);
         }
         finally
         {
             await using var cleanup = new ApplicationDbContext(options);
+            await cleanup.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"ActivityLogs\" WHERE \"EntityId\" = {collectionId} OR \"EntityId\" IN (SELECT \"Id\" FROM \"FinancialLedgerEntries\" WHERE \"CollectionId\" = {collectionId})");
+            await cleanup.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"FinancialLedgerEntries\" WHERE \"CollectionId\" = {collectionId}");
+            await cleanup.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"PassbookEntries\" WHERE \"CollectionId\" = {collectionId}");
+            await cleanup.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"WeightVerifications\" WHERE \"CollectionId\" = {collectionId}");
+            await cleanup.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"ActivityLogs\" WHERE \"EntityId\" IN (SELECT \"Id\" FROM \"TeaPrices\" WHERE \"CollectorId\" = {collectorId})");
+            await cleanup.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"TeaPrices\" WHERE \"CollectorId\" = {collectorId}");
             await cleanup.Database.ExecuteSqlInterpolatedAsync(
                 $"DELETE FROM \"Collections\" WHERE \"Id\" = {collectionId}");
             await cleanup.Database.ExecuteSqlInterpolatedAsync(
@@ -238,6 +268,30 @@ public sealed class CollectionFinancialConsistencyTests
             await cleanup.Database.ExecuteSqlInterpolatedAsync(
                 $"DELETE FROM \"Users\" WHERE \"Id\" IN ({farmerUserId}, {collectorUserId})");
         }
+    }
+
+    private static async Task SetMonthlyPriceAsync(
+        ApplicationDbContext db,
+        Guid collectorUserId,
+        DateTime collectedAt)
+    {
+        var priceService = new TeaPriceService(
+            db,
+            new ActivityLogService(db));
+        await priceService.SetMonthlyPriceForCollectorUserAsync(
+            collectorUserId,
+            new DTOs.TeaPrices.SetMonthlyTeaPriceDto
+            {
+                Year = collectedAt.Year,
+                Month = collectedAt.Month,
+                PricePerKg = 125m,
+                EffectiveFrom = new DateTime(
+                    collectedAt.Year,
+                    collectedAt.Month,
+                    1,
+                    0, 0, 0, DateTimeKind.Utc)
+            },
+            CancellationToken.None);
     }
 
 }
