@@ -1,3 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+
 namespace TeaLedger.API.Configuration;
 
 public static class ApplicationConfiguration
@@ -53,8 +57,32 @@ public static class ApplicationConfiguration
             "JWT audience is not configured.");
         Require(jwtSettings.ExpiresInMinutes > 0,
             "JWT ExpiresInMinutes must be greater than zero.");
+        Require(jwtSettings.ExpiresInMinutes <= 1440,
+            "JWT lifetime cannot exceed 24 hours.");
 
         return jwtSettings;
+    }
+
+    public static TokenValidationParameters CreateTokenValidationParameters(
+        JwtSettings jwtSettings)
+    {
+        return new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            RequireSignedTokens = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = JwtRegisteredClaimNames.Name,
+            RoleClaimType = "role"
+        };
     }
 
     private static void Require(bool condition, string message)

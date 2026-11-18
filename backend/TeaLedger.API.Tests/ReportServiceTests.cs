@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TeaLedger.API.Data;
+using TeaLedger.API.Models;
 using TeaLedger.API.Services;
 
 namespace TeaLedger.API.Tests.Services;
@@ -68,5 +69,74 @@ public sealed class ReportServiceTests
             Guid.NewGuid(), CancellationToken.None);
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task EarningsReport_ContainsOnlyCollectionEarningCredits()
+    {
+        await using var db = CreateDb();
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = "Report Farmer",
+            PhoneNumber = "0776000001",
+            PasswordHash = "test",
+            Role = UserRole.Farmer
+        };
+        var farmer = new Farmer
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            FarmerCode = "REPORT-FARMER",
+            User = user
+        };
+        var when = new DateTime(2026, 10, 15, 12, 0, 0, DateTimeKind.Utc);
+
+        db.Users.Add(user);
+        db.Farmers.Add(farmer);
+        db.FinancialLedgerEntries.AddRange(
+            new FinancialLedgerEntry
+            {
+                FarmerId = farmer.Id,
+                Farmer = farmer,
+                TransactionType = FinancialTransactionType.CollectionEarning,
+                Direction = FinancialDirection.Credit,
+                Amount = 1_250m,
+                Description = "Collection earnings",
+                OccurredAt = when
+            },
+            new FinancialLedgerEntry
+            {
+                FarmerId = farmer.Id,
+                Farmer = farmer,
+                TransactionType = FinancialTransactionType.CollectionEarning,
+                Direction = FinancialDirection.Debit,
+                Amount = 50m,
+                Description = "Invalid earning direction",
+                OccurredAt = when
+            },
+            new FinancialLedgerEntry
+            {
+                FarmerId = farmer.Id,
+                Farmer = farmer,
+                TransactionType = FinancialTransactionType.LoanDisbursement,
+                Direction = FinancialDirection.Credit,
+                Amount = 500m,
+                Description = "Loan disbursement",
+                OccurredAt = when
+            });
+        await db.SaveChangesAsync();
+
+        var result = await new ReportService(db).GetEarningsAsync(
+            new DateOnly(2026, 10, 1),
+            new DateOnly(2026, 10, 31),
+            farmer.Id,
+            1,
+            20,
+            CancellationToken.None);
+
+        var row = Assert.Single(result.Items);
+        Assert.Equal(1_250m, row.Amount);
+        Assert.Equal(1, result.TotalCount);
     }
 }

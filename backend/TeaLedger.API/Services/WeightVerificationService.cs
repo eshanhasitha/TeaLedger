@@ -4,6 +4,7 @@ using TeaLedger.API.DTOs.Collections;
 using TeaLedger.API.DTOs.Passbook;
 using TeaLedger.API.Models;
 using TeaLedger.API.Interfaces;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -85,6 +86,15 @@ public class WeightVerificationService
         if (alreadyVerified)
             throw new InvalidOperationException(
                 "This collection has already been verified.");
+
+        FinancialValidation.ValidatePositiveQuantity(
+            input.GrossWeight, nameof(input.GrossWeight), 1_000_000m);
+        FinancialValidation.ValidateQuantity(
+            input.WaterReduction, nameof(input.WaterReduction), 1_000_000m);
+        FinancialValidation.ValidateQuantity(
+            input.BagWeight, nameof(input.BagWeight), 1_000_000m);
+        FinancialValidation.ValidateQuantity(
+            input.OtherReduction, nameof(input.OtherReduction), 1_000_000m);
 
         var finalWeight = CalculateFinalWeight(
             input.GrossWeight,
