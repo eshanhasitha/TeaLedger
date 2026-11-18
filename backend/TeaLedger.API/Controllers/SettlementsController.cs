@@ -1,10 +1,12 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using TeaLedger.API.Authorization;
 using TeaLedger.API.DTOs.Settlements;
 using TeaLedger.API.Interfaces;
+using TeaLedger.API.Utilities;
 
 namespace TeaLedger.API.Controllers;
 
@@ -60,6 +62,31 @@ public sealed class SettlementsController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (DbUpdateException ex)
+            when (DatabaseErrorHelper.IsUniqueViolation(ex))
+        {
+            return Conflict(new
+            {
+                message =
+                    "A settlement already exists for this farmer and month."
+            });
+        }
+        catch (Exception ex)
+            when (DatabaseErrorHelper.IsUniqueViolation(ex))
+        {
+            return Conflict(new
+            {
+                message =
+                    "A settlement already exists for this farmer and month."
+            });
+        }
+        catch (Exception ex)
+            when (
+                DatabaseErrorHelper.IsSerializationFailure(ex) ||
+                DatabaseErrorHelper.IsDeadlock(ex))
+        {
+            return ConcurrentFinancialTransactionConflict();
+        }
     }
 
     [HttpGet("admin")]
@@ -104,6 +131,40 @@ public sealed class SettlementsController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (DbUpdateException ex)
+            when (DatabaseErrorHelper.IsUniqueViolation(ex))
+        {
+            return Conflict(new
+            {
+                message =
+                    "A payment already exists for this settlement."
+            });
+        }
+        catch (Exception ex)
+            when (DatabaseErrorHelper.IsUniqueViolation(ex))
+        {
+            return Conflict(new
+            {
+                message =
+                    "A payment already exists for this settlement."
+            });
+        }
+        catch (Exception ex)
+            when (
+                DatabaseErrorHelper.IsSerializationFailure(ex) ||
+                DatabaseErrorHelper.IsDeadlock(ex))
+        {
+            return ConcurrentFinancialTransactionConflict();
+        }
+    }
+
+    private IActionResult ConcurrentFinancialTransactionConflict()
+    {
+        return Conflict(new
+        {
+            message =
+                "The settlement could not be completed because of a concurrent financial transaction. Please retry."
+        });
     }
 
     [HttpGet("farmer")]

@@ -12,8 +12,8 @@ using TeaLedger.API.Data;
 namespace TeaLedger.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261118044435_FinancialIntegrity")]
-    partial class FinancialIntegrity
+    [Migration("20261118044959_Day22CollectionFinancialConstraints")]
+    partial class CollectionFinancialConstraints
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

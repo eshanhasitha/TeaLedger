@@ -190,11 +190,10 @@ var corsAllowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? [];
 
-if (!builder.Environment.IsDevelopment() &&
-    corsAllowedOrigins.Length == 0)
+if (corsAllowedOrigins.Length == 0)
 {
     throw new InvalidOperationException(
-        "Configure Cors:AllowedOrigins for non-development environments.");
+        "Configure at least one allowed CORS origin.");
 }
 
 builder.Services.AddCors(
