@@ -1,0 +1,27 @@
+$kind: http-request
+name: Collector records accepted collection
+url: "{{baseUrl}}/api/collections"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "requestId": "{{collectionRequestId}}",
+      "collectedAt": "{{collectedAt}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Collection recorded", function () {
+          pm.response.to.have.status(200);
+          const collection = pm.response.json();
+          pm.expect(collection.id).to.be.a("string");
+          pm.environment.set("collectionId", collection.id);
+      });
+order: 5000

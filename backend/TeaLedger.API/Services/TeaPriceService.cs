@@ -126,6 +126,66 @@ public sealed class TeaPriceService : ITeaPriceService
 
         await _db.SaveChangesAsync(ct);
 
+        var pricedMonthStart = new DateTime(
+            input.Year, input.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var pricedMonthEnd = pricedMonthStart.AddMonths(1);
+        var collections = await _db.Collections
+            .Where(x => x.CollectorId == collectorId &&
+                x.CollectedAt >= pricedMonthStart &&
+                x.CollectedAt < pricedMonthEnd &&
+                (x.Status == CollectionStatus.Collected ||
+                 x.Status == CollectionStatus.Synced))
+            .ToListAsync(ct);
+
+        foreach (var collection in collections)
+        {
+            collection.PricePerKg = input.PricePerKg;
+            collection.TotalAmount = CalculateAmount(
+                collection.FinalWeight, input.PricePerKg);
+            collection.UpdatedAt = now;
+
+            var ledgerEntry = await _db.FinancialLedgerEntries
+                .SingleOrDefaultAsync(
+                    x => x.CollectionId == collection.Id &&
+                         x.TransactionType == FinancialTransactionType.CollectionEarning,
+                    ct);
+            if (ledgerEntry is null)
+            {
+                ledgerEntry = new FinancialLedgerEntry
+                {
+                    Id = Guid.NewGuid(),
+                    FarmerId = collection.FarmerId,
+                    CollectionId = collection.Id,
+                    TransactionType = FinancialTransactionType.CollectionEarning,
+                    Direction = FinancialDirection.Credit,
+                    Description = "Verified tea collection earning",
+                    Reference = collection.Id.ToString(),
+                    OccurredAt = collection.CollectedAt,
+                    CreatedAt = now
+                };
+                _db.FinancialLedgerEntries.Add(ledgerEntry);
+            }
+
+            ledgerEntry.TransactionType =
+                FinancialTransactionType.CollectionEarning;
+            ledgerEntry.Direction = FinancialDirection.Credit;
+            ledgerEntry.Amount = collection.TotalAmount;
+
+            await _activityLog.RecordAsync(
+                actorUserId,
+                "CollectionEarningPriced",
+                nameof(FinancialLedgerEntry),
+                ledgerEntry.Id,
+                $"CollectionId={collection.Id}; " +
+                $"FarmerId={collection.FarmerId}; " +
+                $"FinalWeight={collection.FinalWeight}; " +
+                $"PricePerKg={input.PricePerKg}; " +
+                $"Amount={collection.TotalAmount}",
+                ct);
+        }
+
+        await _db.SaveChangesAsync(ct);
+
         var details = JsonSerializer.Serialize(new
         {
             CollectorId = collectorId,
@@ -134,7 +194,8 @@ public sealed class TeaPriceService : ITeaPriceService
             OldPricePerKg = oldPrice,
             NewPricePerKg = input.PricePerKg,
             OldEffectiveFrom = oldEffectiveFrom,
-            NewEffectiveFrom = effectiveFrom
+            NewEffectiveFrom = effectiveFrom,
+            PricedCollectionCount = collections.Count
         });
 
         await _activityLog.RecordAsync(

@@ -29,5 +29,7 @@ scripts:
           pm.expect(response.total).to.eql(1);
           pm.expect(response.results).to.have.lengthOf(1);
           pm.expect(response.results[0].clientOperationId).to.eql(pm.variables.get("clientOperationId"));
+          pm.expect(response.results[0].collectionId).to.be.a("string");
+          pm.environment.set("collectionId", response.results[0].collectionId);
       });
 order: 8000
