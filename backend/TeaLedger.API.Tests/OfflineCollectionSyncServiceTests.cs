@@ -1,7 +1,9 @@
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using TeaLedger.API.Data;
+using TeaLedger.API.DTOs.Collections;
 using TeaLedger.API.DTOs.Sync;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
@@ -15,6 +17,8 @@ public class OfflineCollectionSyncServiceTests
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(warnings => warnings.Ignore(
+                InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         return new ApplicationDbContext(options);
@@ -209,6 +213,57 @@ public class OfflineCollectionSyncServiceTests
         Assert.Equal(1, await db.Collections.CountAsync());
         Assert.Equal(1, await db.OfflineCollectionSyncs.CountAsync());
         Assert.Equal(1, notifications.Calls);
+    }
+
+    [Fact]
+    public async Task SyncedCollection_CanBeWeightVerified()
+    {
+        await using var db = CreateDb();
+        var seeded = await SeedAcceptedRequest(db);
+        var syncService = new OfflineCollectionSyncService(
+            db,
+            new FakeNotificationService(),
+            NullLogger<OfflineCollectionSyncService>.Instance);
+
+        var syncResult = await syncService.SyncAsync(
+            seeded.CollectorUserId,
+            new SyncCollectionsRequest
+            {
+                Collections =
+                [
+                    new OfflineCollectionSyncDto
+                    {
+                        ClientOperationId = Guid.NewGuid(),
+                        RequestId = seeded.RequestId,
+                        CollectedAt = DateTime.UtcNow
+                    }
+                ]
+            },
+            CancellationToken.None);
+
+        var collectionId = Assert.Single(syncResult.Results).CollectionId;
+        Assert.NotNull(collectionId);
+
+        var verificationService = new WeightVerificationService(
+            db,
+            new ActivityLogService(db));
+        var passbook = await verificationService.VerifyAsync(
+            seeded.CollectorUserId,
+            collectionId.Value,
+            new VerifyWeightDto
+            {
+                GrossWeight = 12m,
+                WaterReduction = 1m,
+                BagWeight = 0.5m,
+                OtherReduction = 0m
+            },
+            CancellationToken.None);
+
+        Assert.NotNull(passbook);
+        Assert.Equal(10.5m, passbook.FinalWeight);
+        Assert.Equal(CollectionStatus.Collected,
+            (await db.Collections.SingleAsync()).Status);
+        Assert.Equal(1, await db.PassbookEntries.CountAsync());
     }
 
     [Fact]

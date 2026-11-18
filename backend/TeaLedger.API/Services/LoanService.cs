@@ -4,6 +4,7 @@ using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Loans;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -45,6 +46,10 @@ public sealed class LoanService : ILoanService
         if (repaymentAmount <= 0)
             throw new ArgumentException(
                 "Repayment amount must be greater than zero.");
+        FinancialValidation.ValidateAmount(
+            repaymentAmount, nameof(repaymentAmount));
+        FinancialValidation.ValidateAmount(
+            outstandingBalance, nameof(outstandingBalance));
 
         if (outstandingBalance <= 0)
             throw new InvalidOperationException(
@@ -137,18 +142,9 @@ public sealed class LoanService : ILoanService
         CreateLoanDto input,
         CancellationToken ct)
     {
-        if (input.PrincipalAmount <= 0)
-            throw new ArgumentException(
-                "Loan amount must be greater than zero.");
-
-        var amount = decimal.Round(
+        var amount = FinancialValidation.ValidatePositiveAmount(
             input.PrincipalAmount,
-            2,
-            MidpointRounding.AwayFromZero);
-
-        if (amount != input.PrincipalAmount)
-            throw new ArgumentException(
-                "Loan amount can have a maximum of two decimal places.");
+            nameof(input.PrincipalAmount));
 
         var collectorId = await GetCollectorIdAsync(
             collectorUserId, ct);
@@ -243,18 +239,9 @@ public sealed class LoanService : ILoanService
         CreateLoanRepaymentDto input,
         CancellationToken ct)
     {
-        if (input.Amount <= 0)
-            throw new ArgumentException(
-                "Repayment amount must be greater than zero.");
-
-        var amount = decimal.Round(
+        var amount = FinancialValidation.ValidatePositiveAmount(
             input.Amount,
-            2,
-            MidpointRounding.AwayFromZero);
-
-        if (amount != input.Amount)
-            throw new ArgumentException(
-                "Repayment amount can have a maximum of two decimal places.");
+            nameof(input.Amount));
 
         var collectorId = await GetCollectorIdAsync(
             collectorUserId, ct);

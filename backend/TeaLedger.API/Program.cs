@@ -1,8 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using TeaLedger.API.Authorization;
 using TeaLedger.API.Configuration;
@@ -101,60 +98,12 @@ builder.Services
                 !builder.Environment.IsDevelopment();
 
             options.TokenValidationParameters =
-                new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
+                ApplicationConfiguration.CreateTokenValidationParameters(
+                    jwtSettings);
 
-                    IssuerSigningKey =
-                        new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(
-                                jwtSettings.Key)),
-
-                    ValidateIssuer = true,
-
-                    ValidIssuer =
-                        jwtSettings.Issuer,
-
-                    ValidateAudience = true,
-
-                    ValidAudience =
-                        jwtSettings.Audience,
-
-                    ValidateLifetime = true,
-
-                    RequireExpirationTime = true,
-
-                    RequireSignedTokens = true,
-
-                    ClockSkew =
-                        TimeSpan.FromMinutes(1),
-
-                    NameClaimType =
-                        JwtRegisteredClaimNames.Name,
-
-                    RoleClaimType =
-                        "role"
-                };
         });
 
-builder.Services.AddAuthorization(
-    options =>
-    {
-        options.AddPolicy(
-            AuthorizationPolicies.AdminOnly,
-            policy =>
-                policy.RequireRole("Admin"));
-
-        options.AddPolicy(
-            AuthorizationPolicies.CollectorOnly,
-            policy =>
-                policy.RequireRole("Collector"));
-
-        options.AddPolicy(
-            AuthorizationPolicies.FarmerOnly,
-            policy =>
-                policy.RequireRole("Farmer"));
-    });
+builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
 
 builder.Services.AddScoped<
     IPasswordService,
@@ -237,6 +186,16 @@ builder.Services.AddScoped<
     ISettlementService,
     SettlementService>();
 
+var corsAllowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+if (corsAllowedOrigins.Length == 0)
+{
+    throw new InvalidOperationException(
+        "Configure at least one allowed CORS origin.");
+}
+
 builder.Services.AddCors(
     options =>
     {
@@ -245,7 +204,7 @@ builder.Services.AddCors(
             policy =>
             {
                 policy
-                    .AllowAnyOrigin()
+                    .WithOrigins(corsAllowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });

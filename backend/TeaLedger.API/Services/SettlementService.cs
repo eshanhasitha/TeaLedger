@@ -1,10 +1,12 @@
 
 using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Settlements;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -50,6 +52,37 @@ public sealed class SettlementService : ISettlementService
     {
         return new DateTime(
             year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+    }
+
+    private static bool IsSettlementUniqueViolation(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException postgresException &&
+                postgresException.SqlState == PostgresErrorCodes.UniqueViolation &&
+                postgresException.ConstraintName ==
+                    "IX_Settlements_FarmerId_Year_Month")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsSerializationFailure(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException postgresException &&
+                (postgresException.SqlState == PostgresErrorCodes.SerializationFailure ||
+                 postgresException.SqlState == PostgresErrorCodes.DeadlockDetected))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static SettlementDto Map(Settlement x)
@@ -133,6 +166,39 @@ public sealed class SettlementService : ISettlementService
         CreateSettlementDto input,
         CancellationToken ct)
     {
+        try
+        {
+            return await CreateCoreAsync(adminUserId, input, ct);
+        }
+        catch (DbUpdateException ex) when (IsSettlementUniqueViolation(ex))
+        {
+            throw new InvalidOperationException(
+                "A settlement already exists for this farmer and month.", ex);
+        }
+        catch (PostgresException ex) when (
+            ex.SqlState == PostgresErrorCodes.UniqueViolation &&
+            ex.ConstraintName == "IX_Settlements_FarmerId_Year_Month")
+        {
+            throw new InvalidOperationException(
+                "A settlement already exists for this farmer and month.", ex);
+        }
+        catch (DbUpdateException ex) when (IsSerializationFailure(ex))
+        {
+            throw new InvalidOperationException(
+                "The settlement changed concurrently. Please retry the request.", ex);
+        }
+        catch (PostgresException ex) when (IsSerializationFailure(ex))
+        {
+            throw new InvalidOperationException(
+                "The settlement changed concurrently. Please retry the request.", ex);
+        }
+    }
+
+    private async Task<SettlementDto> CreateCoreAsync(
+        Guid adminUserId,
+        CreateSettlementDto input,
+        CancellationToken ct)
+    {
         if (input.FarmerId == Guid.Empty)
             throw new ArgumentException("FarmerId is required.");
 
@@ -141,6 +207,10 @@ public sealed class SettlementService : ISettlementService
 
         if (input.Month < 1 || input.Month > 12)
             throw new ArgumentException("Invalid settlement month.");
+
+        FinancialValidation.ValidateAmount(
+            input.LoanRepaymentAmount,
+            nameof(input.LoanRepaymentAmount));
 
         var farmer = await _db.Farmers
             .Include(x => x.User)
@@ -213,20 +283,6 @@ public sealed class SettlementService : ISettlementService
 
         var availableForLoanRepayment =
             grossIncome - materialDeductions - loanRepayments;
-
-        if (input.LoanRepaymentAmount < 0)
-            throw new ArgumentOutOfRangeException(
-                nameof(input.LoanRepaymentAmount),
-                "Loan repayment amount cannot be negative.");
-
-        var roundedLoanRepayment = decimal.Round(
-            input.LoanRepaymentAmount,
-            2,
-            MidpointRounding.AwayFromZero);
-
-        if (roundedLoanRepayment != input.LoanRepaymentAmount)
-            throw new ArgumentException(
-                "Loan repayment amount can have a maximum of two decimal places.");
 
         if (input.LoanRepaymentAmount > availableForLoanRepayment)
             throw new InvalidOperationException(

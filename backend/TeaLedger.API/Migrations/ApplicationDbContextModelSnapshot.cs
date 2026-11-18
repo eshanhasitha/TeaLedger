@@ -126,7 +126,12 @@ namespace TeaLedger.API.Migrations
 
                     b.HasIndex("FarmerId", "CollectedAt");
 
-                    b.ToTable("Collections");
+                    b.ToTable("Collections", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Collections_FinancialValues_Nonnegative", "\"PricePerKg\" >= 0 AND \"TotalAmount\" >= 0");
+
+                            t.HasCheckConstraint("CK_Collections_Weights_Nonnegative", "\"GrossWeight\" >= 0 AND \"WaterReduction\" >= 0 AND \"BagWeight\" >= 0 AND \"OtherReduction\" >= 0 AND \"FinalWeight\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("TeaLedger.API.Models.CollectionRequest", b =>
@@ -422,6 +427,8 @@ namespace TeaLedger.API.Migrations
                     b.ToTable("FinancialLedgerEntries", null, t =>
                         {
                             t.HasCheckConstraint("CK_FinancialLedgerEntries_Amount", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("CK_FinancialLedgerEntries_ValidTransaction", "((\"TransactionType\" = 'CollectionEarning' AND \"Direction\" = 'Credit') OR (\"TransactionType\" = 'Deduction' AND \"Direction\" = 'Debit') OR (\"TransactionType\" = 'LoanDisbursement' AND \"Direction\" = 'Credit') OR (\"TransactionType\" = 'LoanRepayment' AND \"Direction\" = 'Debit') OR (\"TransactionType\" = 'SettlementPayment' AND \"Direction\" = 'Debit') OR (\"TransactionType\" = 'Adjustment' AND \"Direction\" IN ('Credit', 'Debit')))");
                         });
                 });
 

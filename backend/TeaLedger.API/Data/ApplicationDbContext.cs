@@ -69,6 +69,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(
             new SettlementDeductionBreakdownConfiguration());
 
+        modelBuilder.ApplyConfiguration(
+            new FinancialLedgerEntryConfiguration());
+
         modelBuilder.Entity<User>()
             .HasIndex(x => x.PhoneNumber)
             .IsUnique();
@@ -207,6 +210,21 @@ public class ApplicationDbContext : DbContext
         // Existing Collection entity
         modelBuilder.Entity<Collection>(entity =>
         {
+            entity.ToTable("Collections", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Collections_Weights_Nonnegative",
+                    "\"GrossWeight\" >= 0 AND " +
+                    "\"WaterReduction\" >= 0 AND " +
+                    "\"BagWeight\" >= 0 AND " +
+                    "\"OtherReduction\" >= 0 AND " +
+                    "\"FinalWeight\" >= 0");
+
+                table.HasCheckConstraint(
+                    "CK_Collections_FinancialValues_Nonnegative",
+                    "\"PricePerKg\" >= 0 AND \"TotalAmount\" >= 0");
+            });
+
             entity.Property(x => x.GrossWeight).HasPrecision(12, 3);
             entity.Property(x => x.WaterReduction).HasPrecision(12, 3);
             entity.Property(x => x.BagWeight).HasPrecision(12, 3);
@@ -374,88 +392,6 @@ public class ApplicationDbContext : DbContext
                     "CK_TeaPrices_PricePerKg",
                     "\"PricePerKg\" > 0");
             });
-        });
-
-        modelBuilder.Entity<FinancialLedgerEntry>(entity =>
-        {
-            entity.ToTable("FinancialLedgerEntries");
-
-            entity.HasKey(x => x.Id);
-
-            entity.Property(x => x.TransactionType)
-                .HasConversion<string>()
-                .HasMaxLength(40)
-                .IsRequired();
-
-            entity.Property(x => x.Direction)
-                .HasConversion<string>()
-                .HasMaxLength(20)
-                .IsRequired();
-
-            entity.Property(x => x.Amount)
-                .HasPrecision(14, 2)
-                .IsRequired();
-
-            entity.Property(x => x.Description)
-                .HasMaxLength(250)
-                .IsRequired();
-
-            entity.Property(x => x.Reference)
-                .HasMaxLength(100);
-
-            entity.Property(x => x.OccurredAt)
-                .IsRequired();
-
-            entity.Property(x => x.CreatedAt)
-                .IsRequired();
-
-            entity.Property(x => x.DeductionId);
-
-            entity.HasOne(x => x.Farmer)
-                .WithMany()
-                .HasForeignKey(x => x.FarmerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(x => x.Collection)
-                .WithMany()
-                .HasForeignKey(x => x.CollectionId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasIndex(x => new
-            {
-                x.FarmerId,
-                x.OccurredAt
-            });
-
-            entity.HasIndex(x => new
-            {
-                x.TransactionType,
-                x.Direction,
-                x.OccurredAt
-            });
-
-            entity.HasIndex(x => new
-            {
-                x.CollectionId,
-                x.TransactionType
-            })
-            .IsUnique()
-            .HasFilter("\"CollectionId\" IS NOT NULL");
-
-            entity.ToTable(table =>
-            {
-                table.HasCheckConstraint(
-                    "CK_FinancialLedgerEntries_Amount",
-                    "\"Amount\" > 0");
-            });
-
-            entity.HasIndex(x => x.DeductionId)
-            .IsUnique()
-            .HasFilter("\"DeductionId\" IS NOT NULL");
-
-            entity.HasIndex(x => x.SettlementId)
-                .IsUnique()
-                .HasFilter("\"SettlementId\" IS NOT NULL");
         });
 
         modelBuilder.Entity<DeviceToken>(entity =>

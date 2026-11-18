@@ -4,6 +4,7 @@ using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.TeaPrices;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -395,12 +396,10 @@ public sealed class TeaPriceService : ITeaPriceService
         if (input.Month < 1 || input.Month > 12)
             throw new ArgumentException("Invalid month.");
 
-        if (input.PricePerKg <= 0 ||
-            input.PricePerKg > 1_000_000)
-        {
-            throw new ArgumentException(
-                "Price per kg must be greater than zero and within the allowed limit.");
-        }
+        FinancialValidation.ValidatePositiveAmount(
+            input.PricePerKg,
+            nameof(input.PricePerKg),
+            1_000_000m);
 
         if (input.EffectiveFrom == default)
             throw new ArgumentException(
