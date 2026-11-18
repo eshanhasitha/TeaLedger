@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -53,15 +52,20 @@ public sealed class SettlementAuthorizationApiTests
 public sealed class SettlementAuthorizationApiFactory
     : WebApplicationFactory<Program>
 {
+    private readonly string? _previousCorsOrigin;
+
+    public SettlementAuthorizationApiFactory()
+    {
+        _previousCorsOrigin =
+            Environment.GetEnvironmentVariable("Cors__AllowedOrigins__0");
+        Environment.SetEnvironmentVariable(
+            "Cors__AllowedOrigins__0",
+            "http://localhost");
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.ConfigureAppConfiguration((_, configuration) =>
-            configuration.AddInMemoryCollection(
-                new Dictionary<string, string?>
-                {
-                    ["Cors:AllowedOrigins:0"] = "http://localhost"
-                }));
         builder.ConfigureTestServices(services =>
         {
             var seedHostedService = services.SingleOrDefault(descriptor =>
@@ -80,6 +84,17 @@ public sealed class SettlementAuthorizationApiFactory
                 "Test",
                 _ => { });
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing)
+        {
+            Environment.SetEnvironmentVariable(
+                "Cors__AllowedOrigins__0",
+                _previousCorsOrigin);
+        }
     }
 }
 

@@ -6,6 +6,7 @@ using TeaLedger.API.Services;
 
 namespace TeaLedger.API.Tests;
 
+[Collection("PostgreSQL integration")]
 public sealed class SettlementConcurrencyPostgresTests
 {
     [Fact]

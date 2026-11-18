@@ -1,4 +1,5 @@
 using TeaLedger.API.Models;
+using TeaLedger.API.Services;
 
 namespace TeaLedger.API.Tests;
 
@@ -16,6 +17,16 @@ public sealed class EarningsCalculationTests
             MidpointRounding.AwayFromZero);
 
         Assert.Equal(1405.60m, totalAmount);
+    }
+
+    [Fact]
+    public void CollectionEarning_UsesSavedPriceAndRoundsToTwoDecimals()
+    {
+        var amount = TeaPriceService.CalculateAmount(
+            10.125m,
+            125.50m);
+
+        Assert.Equal(1270.69m, amount);
     }
 
     [Fact]

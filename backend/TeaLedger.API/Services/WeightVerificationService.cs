@@ -153,6 +153,7 @@ public class WeightVerificationService
             VerifiedAt = now
         };
 
+        
         var passbookEntry = new PassbookEntry
         {
             Id = Guid.NewGuid(),
@@ -167,15 +168,42 @@ public class WeightVerificationService
         _db.WeightVerifications.Add(verification);
         _db.PassbookEntries.Add(passbookEntry);
 
+        // If the applicable monthly price already exists, create the
+        // earning ledger entry in this same transaction.
+        // If no price exists, TeaPriceService will create it when a
+        // price is subsequently configured.
+        if (applicablePrice is not null && totalAmount > 0m)
+        {
+            var earningEntry = new FinancialLedgerEntry
+            {
+                Id = Guid.NewGuid(),
+                FarmerId = collection.FarmerId,
+                CollectionId = collection.Id,
+                TransactionType =
+                    FinancialTransactionType.CollectionEarning,
+                Direction = FinancialDirection.Credit,
+                Amount = totalAmount,
+                Description = "Verified tea collection earning",
+                Reference = collection.Id.ToString(),
+                OccurredAt = collection.CollectedAt,
+                CreatedAt = now
+            };
+
+            _db.FinancialLedgerEntries.Add(earningEntry);
+        }
+
         await _db.SaveChangesAsync(ct);
+
         await _activityLog.RecordAsync(
             collectorUserId,
             "CollectionWeightVerified",
             nameof(Collection),
             collection.Id,
             $"FinalWeight={finalWeight}; " +
-            $"MonthlyPriceAvailable={applicablePrice is not null}",
+            $"MonthlyPriceAvailable={applicablePrice is not null}; " +
+            $"TotalAmount={totalAmount}",
             ct);
+
         await transaction.CommitAsync(ct);
 
         return new PassbookEntryDto
@@ -189,5 +217,6 @@ public class WeightVerificationService
             TotalAmount = collection.TotalAmount,
             RecordedAt = passbookEntry.RecordedAt
         };
+
     }
 }

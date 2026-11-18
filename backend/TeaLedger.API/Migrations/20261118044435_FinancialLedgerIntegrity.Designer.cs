@@ -12,7 +12,7 @@ using TeaLedger.API.Data;
 namespace TeaLedger.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261118044435_Day22FinancialLedgerIntegrity")]
+    [Migration("20261118044435_FinancialLedgerIntegrity")]
     partial class FinancialLedgerIntegrity
     {
         /// <inheritdoc />
