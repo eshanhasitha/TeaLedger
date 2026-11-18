@@ -6,8 +6,8 @@ import {
   Calculator,
   Scale,
 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
-import { useAuth } from '../../context/AuthContext';
+import { useDashboard } from '../../hooks/useDashboard';
+import { useAuth } from '../../hooks/useAuth';
 
 export const DashboardHeader = () => {
   const {

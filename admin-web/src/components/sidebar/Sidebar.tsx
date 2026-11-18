@@ -19,8 +19,8 @@ import {
   X,
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
-import { useDashboard } from '../../context/DashboardContext';
-import { useAuth } from '../../context/AuthContext';
+import { useDashboard } from '../../hooks/useDashboard';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SidebarProps {
   mobileOpen?: boolean;

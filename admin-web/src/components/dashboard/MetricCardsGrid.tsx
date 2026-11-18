@@ -11,10 +11,15 @@ import {
   ArrowUp,
   AlertCircle,
 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const MetricCardsGrid: React.FC = () => {
-  const { slips, farmers, setIsSettlementModalOpen, setActiveTab } = useDashboard();
+  const { slips, farmers, collectors, setIsSettlementModalOpen, setActiveTab } = useDashboard();
+
+  const activeCollectorsCount = collectors ? collectors.filter((c) => c.status === 'Active').length : 24;
+  const totalCollectorsCount = collectors ? collectors.length : 26;
+  const onLeaveCollectorsCount = collectors ? collectors.filter((c) => c.status === 'On Leave').length : 2;
+  const deployedPercent = Math.round((activeCollectorsCount / (totalCollectorsCount || 1)) * 100);
 
   return (
     <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -61,14 +66,14 @@ export const MetricCardsGrid: React.FC = () => {
         </div>
         <div className="mt-2 flex items-center gap-2">
           <span className="text-2xl font-extrabold tracking-tight text-[#16271c]">
-            24 / 26
+            {activeCollectorsCount} / {totalCollectorsCount}
           </span>
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-            92% Deployed
+            {deployedPercent}% Deployed
           </span>
         </div>
         <div className="mt-2.5 text-xs text-slate-500 border-t border-slate-100 pt-2">
-          2 on scheduled factory leave
+          {onLeaveCollectorsCount} on scheduled factory leave
         </div>
       </div>
 

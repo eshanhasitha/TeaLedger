@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Scale, Check } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 const WEIGHBRIDGE_IDS = ['WB-01', 'WB-02', 'WB-03'] as const;
 type WeighbridgeId = (typeof WEIGHBRIDGE_IDS)[number];

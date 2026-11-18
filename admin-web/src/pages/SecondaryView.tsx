@@ -9,7 +9,8 @@ import {
   Plus,
   CheckCircle2,
 } from 'lucide-react';
-import { useDashboard } from '../context/DashboardContext';
+import { useDashboard } from '../hooks/useDashboard';
+import { CollectorsPage } from './Collectors/CollectorsPage';
 
 export const SecondaryView = () => {
   const {
@@ -319,8 +320,11 @@ export const SecondaryView = () => {
         </div>
       )}
 
+      {/* COLLECTORS VIEW */}
+      {activeTab === 'collectors' && <CollectorsPage />}
+
       {/* GENERIC OTHER TABS */}
-      {!['farmers', 'collections', 'collection-requests', 'weight-verification', 'settlements', 'tea-prices'].includes(activeTab) && (
+      {!['farmers', 'collections', 'collection-requests', 'weight-verification', 'settlements', 'tea-prices', 'collectors'].includes(activeTab) && (
         <div className="rounded-2xl border border-[#ded8cc] bg-white p-8 text-center space-y-3 shadow-xs">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
             <CheckCircle2 className="h-6 w-6" />
