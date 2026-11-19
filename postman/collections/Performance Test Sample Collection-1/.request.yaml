@@ -1,0 +1,18 @@
+$kind: http-request
+name: ""
+url: https://tealedger-api.orangebush-4c18625b.indonesiacentral.azurecontainerapps.io/api/health
+method: GET
+body:
+  type: json
+  content: "{\r
+
+    \  \"fullName\": \"Eshan4\",\r
+
+    \  \"phoneNumber\": \"0767486440\",\r
+
+    \  \"password\": \"@Password1!\",\r
+
+    \  \"confirmPassword\": \"@Password1!\"\r
+
+    }"
+order: 1000
