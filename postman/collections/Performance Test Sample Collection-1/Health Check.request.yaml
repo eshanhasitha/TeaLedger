@@ -1,5 +1,4 @@
 $kind: http-request
-name: ""
 url: https://tealedger-api.orangebush-4c18625b.indonesiacentral.azurecontainerapps.io/api/health
 method: GET
 body:
