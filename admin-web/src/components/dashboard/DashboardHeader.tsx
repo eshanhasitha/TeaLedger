@@ -10,7 +10,6 @@ interface DashboardHeaderProps {
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ data }) => {
   const { setIsRecordModalOpen, addToast } = useDashboard();
 
-  // Dynamic formatted date e.g. "Saturday, 14 November 2026"
   const formattedDate = new Intl.DateTimeFormat('en-GB', {
     weekday: 'long',
     day: 'numeric',
@@ -36,37 +35,33 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ data }) => {
   };
 
   return (
-    <div className="self-stretch flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 overflow-hidden">
-      {/* Title & Subtitle */}
-      <div className="flex-1 flex flex-col justify-start items-start gap-1 overflow-hidden">
-        <h1 className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter'] tracking-tight">
+    <div className="self-stretch flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex-1 flex flex-col justify-start items-start gap-1">
+        <h1 className="text-[#17201B] text-2xl sm:text-[26px] font-bold tracking-tight">
           Dashboard
         </h1>
-        <div className="self-stretch justify-start text-text-secondary text-xs sm:text-sm font-normal font-['Inter']">
+        <div className="text-[#56625B] text-[13px] font-normal">
           {formattedDate} · Collections and settlements at a glance
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto">
-        {/* Secondary: Export report */}
+      <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
         <button
           type="button"
           onClick={handleExport}
-          className="flex-1 sm:flex-initial px-4 sm:px-5 py-3 sm:py-3.5 bg-surface-card rounded-xl outline outline-[1.50px] outline-offset-[-1.50px] outline-border-default hover:bg-slate-50 active:bg-slate-100 flex justify-center items-center gap-2 cursor-pointer transition-colors shadow-xs"
+          className="flex-1 sm:flex-initial px-4 py-2.5 bg-white border border-[#DCE2DC] hover:bg-[#F4F6F3] rounded-lg flex justify-center items-center gap-2 cursor-pointer transition-colors"
         >
-          <span className="text-brand-primary text-sm sm:text-base font-semibold font-['Inter']">
+          <span className="text-[#17201B] text-sm font-semibold">
             Export report
           </span>
         </button>
 
-        {/* Primary: Record collection */}
         <button
           type="button"
           onClick={() => setIsRecordModalOpen(true)}
-          className="flex-1 sm:flex-initial px-4 sm:px-5 py-3 sm:py-3.5 bg-brand-primary hover:bg-brand-primary-hover active:bg-emerald-800 rounded-xl flex justify-center items-center gap-2 cursor-pointer transition-colors shadow-xs text-white"
+          className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#0B5D3B] hover:bg-[#08472D] rounded-lg flex justify-center items-center gap-2 cursor-pointer transition-colors text-white"
         >
-          <span className="text-text-on-primary text-sm sm:text-base font-semibold font-['Inter']">
+          <span className="text-white text-sm font-semibold">
             Record collection
           </span>
         </button>
