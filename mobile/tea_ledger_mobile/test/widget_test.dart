@@ -1,30 +1,72 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:tea_ledger_mobile/main.dart';
+import 'package:tea_ledger_mobile/features/authentication/data/auth_models.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('TeaLedger authentication models', () {
+    test('LoginRequest serializes using backend property names', () {
+      const request = LoginRequest(
+        phoneNumber: '0771234567',
+        password: 'TestPassword123!',
+      );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      final json = request.toJson();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(json['phoneNumber'], '0771234567');
+      expect(json['password'], 'TestPassword123!');
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('LoginResponse parses backend response', () {
+      final response = LoginResponse.fromJson({
+        'accessToken': 'test-jwt',
+        'expiresAt': '2026-11-24T12:30:00Z',
+        'userId': '11111111-1111-1111-1111-111111111111',
+        'fullName': 'Test Farmer',
+        'phoneNumber': '0771234567',
+        'role': 'Farmer',
+      });
+
+      expect(response.accessToken, 'test-jwt');
+      expect(response.fullName, 'Test Farmer');
+      expect(response.role, 'Farmer');
+    });
+
+    test('CurrentUser parses farmer role', () {
+      final user = CurrentUser.fromJson({
+        'userId': '11111111-1111-1111-1111-111111111111',
+        'fullName': 'Test Farmer',
+        'phoneNumber': '0771234567',
+        'role': 'Farmer',
+        'isActive': true,
+      });
+
+      expect(user.role, 'Farmer');
+      expect(user.isActive, true);
+    });
+
+    test('CurrentUser parses collector role', () {
+      final user = CurrentUser.fromJson({
+        'userId': '22222222-2222-2222-2222-222222222222',
+        'fullName': 'Test Collector',
+        'phoneNumber': '0771234568',
+        'role': 'Collector',
+        'isActive': true,
+      });
+
+      expect(user.role, 'Collector');
+      expect(user.isActive, true);
+    });
+
+    test('Inactive user is identified', () {
+      final user = CurrentUser.fromJson({
+        'userId': '11111111-1111-1111-1111-111111111111',
+        'fullName': 'Inactive Farmer',
+        'phoneNumber': '0771234567',
+        'role': 'Farmer',
+        'isActive': false,
+      });
+
+      expect(user.isActive, false);
+    });
   });
 }
