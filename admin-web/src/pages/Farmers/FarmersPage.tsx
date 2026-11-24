@@ -106,7 +106,7 @@ export const FarmersPage: React.FC = () => {
   const totalPages = Math.ceil(totalFarmers / pageSize);
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-start items-start gap-6 font-['Inter',sans-serif]">
+    <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col justify-start items-start gap-6 font-['Inter',sans-serif]">
       {/* Backend Error Banner */}
       {errorMessage && (
         <div className="w-full p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-amber-900 flex items-center justify-between text-xs sm:text-sm animate-in fade-in duration-200">
