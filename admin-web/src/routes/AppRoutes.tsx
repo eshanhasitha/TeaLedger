@@ -18,6 +18,8 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<AppLayout />} />
         <Route path="/collectors" element={<AppLayout />} />
+        <Route path="/farmers" element={<AppLayout />} />
+        <Route path="/farmers/new" element={<AppLayout />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>
 
