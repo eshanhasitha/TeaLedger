@@ -8,8 +8,8 @@ body:
   type: json
   content: |-
     {
-      "phoneNumber": "{{phoneNumber}}",
-      "password": "{{password}}"
+      "phoneNumber": "{{farmerPhoneNumber}}",
+      "password": "{{farmerPassword}}"
     }
 auth:
   type: noauth
@@ -20,10 +20,12 @@ scripts:
           const body = pm.response.json();
           if (body.accessToken) {
               pm.environment.set("accessToken", body.accessToken);
+              pm.environment.set("farmerAccessToken", body.accessToken);
           }
       }
       pm.test("Login returns an access token", function () {
           pm.response.to.have.status(200);
           pm.expect(pm.response.json().accessToken).to.be.a("string").and.not.empty;
+          pm.expect(pm.response.json().role).to.eql("Farmer");
       });
 order: 3000

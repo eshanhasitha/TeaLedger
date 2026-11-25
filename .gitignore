@@ -71,3 +71,5 @@ logs/
 
 # Coverage
 coverage/
+
+etc/secrets/tealedger-3c988-firebase-adminsdk-fbsvc-695edca888.json

@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using TeaLedger.API.Models;
 
 namespace TeaLedger.API.DTOs.Loans;
 
@@ -6,6 +8,11 @@ public sealed class CreateLoanRepaymentDto
 {
     [Range(typeof(decimal), "0.01", "1000000000")]
     public decimal Amount { get; set; }
+
+    [EnumDataType(typeof(LoanRepaymentMethod))]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public LoanRepaymentMethod PaymentMethod { get; set; } =
+        LoanRepaymentMethod.Cash;
 
     public DateTime? PaidAt { get; set; }
 
@@ -23,6 +30,9 @@ public sealed class LoanRepaymentDto
     public Guid LoanId { get; set; }
 
     public decimal Amount { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public LoanRepaymentMethod PaymentMethod { get; set; }
 
     public DateTime PaidAt { get; set; }
 

@@ -146,17 +146,44 @@ export function buildSettlements(
     .filter((f) => byFarmer.has(f.id))
     .map((f) => {
       const e = byFarmer.get(f.id)!
-      // transport (Rs 3/kg) + fertilizer advance on some farmers
-      const deductions = round2(e.kg * 3 + (Number(f.id.slice(1)) % 3 === 0 ? 1500 : 0))
+      const transportDeduction = round2(e.kg * 3)
+      const fertilizerAdvance = Number(f.id.slice(1)) % 3 === 0 ? 1500 : 0
+      const loanRepayments = Number(f.id.slice(1)) % 4 === 0 ? 500 : 0
+      const deductionBreakdown = [
+        {
+          category: 'Transport',
+          quantity: round2(e.kg),
+          unit: 'kg',
+          unitPrice: 3,
+          amount: transportDeduction,
+        },
+        ...(fertilizerAdvance > 0
+          ? [{
+              category: 'Fertilizer',
+              quantity: 1,
+              unit: 'item',
+              unitPrice: fertilizerAdvance,
+              amount: fertilizerAdvance,
+            }]
+          : []),
+      ]
+      const deductions = round2(transportDeduction + fertilizerAdvance)
+      const totalDeductionQuantityKg = deductionBreakdown
+        .filter((deduction) => ['kg', 'kgs', 'kilogram', 'kilograms'].includes(deduction.unit.toLowerCase()))
+        .reduce((total, deduction) => total + deduction.quantity, 0)
       return {
         id: uid() + f.id,
         ref: `ST-${period.replace('-', '')}-${n++}`,
         farmerId: f.id,
         period,
         kg: round2(e.kg),
+        averageTeaPricePerKg: e.kg > 0 ? round2(e.amt / e.kg) : 0,
         grossAmount: round2(e.amt),
         deductions,
-        net: round2(e.amt - deductions),
+        totalDeductionQuantityKg,
+        deductionBreakdown,
+        loanRepayments,
+        net: round2(e.amt - deductions - loanRepayments),
         status: 'Draft' as const,
         createdAt: new Date().toISOString(),
       }

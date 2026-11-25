@@ -28,6 +28,14 @@ public sealed class FinancialLedgerEntry
 
     public Deduction? Deduction { get; set; }
 
+    public Guid? LoanRepaymentId { get; set; }
+
+    public LoanRepayment? LoanRepayment { get; set; } 
+
+    public Guid? SettlementId { get; set; }
+
+    public Settlement? Settlement { get; set; }
+
     public FinancialTransactionType TransactionType { get; set; }
 
     public FinancialDirection Direction { get; set; }

@@ -1,8 +1,10 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeaLedger.API.Authorization;
 using TeaLedger.API.Data;
+using TeaLedger.API.Services;
 
 namespace TeaLedger.API.Controllers;
 
@@ -12,52 +14,60 @@ namespace TeaLedger.API.Controllers;
 public sealed class AdminDashboardController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly DashboardService _dashboard;
 
-    public AdminDashboardController(ApplicationDbContext db)
+    public AdminDashboardController(
+        ApplicationDbContext db,
+        DashboardService dashboard)
     {
         _db = db;
+        _dashboard = dashboard;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetDashboard(
-        CancellationToken cancellationToken)
+        [FromQuery] DateOnly? from,
+        [FromQuery] DateOnly? to,
+        CancellationToken ct)
     {
-        var totalUsers = await _db.Users
-            .CountAsync(cancellationToken);
-
-        var activeUsers = await _db.Users
-            .CountAsync(u => u.IsActive, cancellationToken);
-
-        var inactiveUsers = await _db.Users
-            .CountAsync(u => !u.IsActive, cancellationToken);
-
-        var adminCount = await _db.Users
-            .CountAsync(
-                u => u.Role == Models.UserRole.Admin,
-                cancellationToken);
-
-        var collectorCount = await _db.Users
-            .CountAsync(
-                u => u.Role == Models.UserRole.Collector,
-                cancellationToken);
-
-        var farmerCount = await _db.Users
-            .CountAsync(
-                u => u.Role == Models.UserRole.Farmer,
-                cancellationToken);
-
-        return Ok(new
+        try
         {
-            generatedAtUtc = DateTime.UtcNow,
-            totalUsers,
-            activeUsers,
-            inactiveUsers,
-            usersByRole = new
+            var dashboard = await _dashboard.GetAdminAsync(
+                from, to, ct);
+
+            var totalUsers = await _db.Users.CountAsync(ct);
+            var activeUsers = await _db.Users.CountAsync(
+                x => x.IsActive, ct);
+
+            var usersByRole = new
             {
-                admins = adminCount,
-                collectors = collectorCount,
-                farmers = farmerCount
-            }
-        });
+                admins = await _db.Users.CountAsync(
+                    x => x.Role == Models.UserRole.Admin, ct),
+
+                collectors = await _db.Users.CountAsync(
+                    x => x.Role == Models.UserRole.Collector, ct),
+
+                farmers = await _db.Users.CountAsync(
+                    x => x.Role == Models.UserRole.Farmer, ct)
+            };
+
+            return Ok(new
+            {
+                GeneratedAt = DateTime.UtcNow,
+                users = new
+                {
+                    totalUsers,
+                    activeUsers,
+                    inactiveUsers = totalUsers - activeUsers,
+                    usersByRole
+                },
+                dashboard.Summary,
+                dashboard.DailyCollections
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

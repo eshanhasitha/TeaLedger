@@ -28,6 +28,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CollectionRequest> CollectionRequests => Set<CollectionRequest>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
 
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
@@ -41,6 +42,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
 
     public DbSet<Deduction> Deductions => Set<Deduction>();
+    public DbSet<Settlement> Settlements => Set<Settlement>();
+
+    public DbSet<SettlementDeductionBreakdown> SettlementDeductionBreakdowns
+        => Set<SettlementDeductionBreakdown>();
+
+    public DbSet<OfflineCollectionSync> OfflineCollectionSyncs
+        => Set<OfflineCollectionSync>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
@@ -51,7 +59,18 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new LoanRepaymentConfiguration());
 
+        modelBuilder.ApplyConfiguration(
+            new LoanRepaymentLedgerConfiguration());
+
         modelBuilder.ApplyConfiguration(new DeductionConfiguration());
+
+        modelBuilder.ApplyConfiguration(new SettlementConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new SettlementDeductionBreakdownConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new FinancialLedgerEntryConfiguration());
 
         modelBuilder.Entity<User>()
             .HasIndex(x => x.PhoneNumber)
@@ -94,6 +113,18 @@ public class ApplicationDbContext : DbContext
             .HasOne(x => x.PassbookEntry)
             .WithOne(x => x.Collection)
             .HasForeignKey<PassbookEntry>(x => x.CollectionId);
+
+        modelBuilder.Entity<Deduction>()
+            .HasIndex(x => new { x.FarmerId, x.OccurredAt });
+
+        modelBuilder.Entity<Deduction>()
+            .HasIndex(x => x.OccurredAt);
+
+        modelBuilder.Entity<Loan>()
+            .HasIndex(x => x.FarmerId);
+
+        modelBuilder.Entity<LoanRepayment>()
+            .HasIndex(x => new { x.LoanId, x.PaidAt });
         
         modelBuilder.ApplyConfiguration(
             new CollectorConfiguration());
@@ -179,6 +210,21 @@ public class ApplicationDbContext : DbContext
         // Existing Collection entity
         modelBuilder.Entity<Collection>(entity =>
         {
+            entity.ToTable("Collections", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Collections_Weights_Nonnegative",
+                    "\"GrossWeight\" >= 0 AND " +
+                    "\"WaterReduction\" >= 0 AND " +
+                    "\"BagWeight\" >= 0 AND " +
+                    "\"OtherReduction\" >= 0 AND " +
+                    "\"FinalWeight\" >= 0");
+
+                table.HasCheckConstraint(
+                    "CK_Collections_FinancialValues_Nonnegative",
+                    "\"PricePerKg\" >= 0 AND \"TotalAmount\" >= 0");
+            });
+
             entity.Property(x => x.GrossWeight).HasPrecision(12, 3);
             entity.Property(x => x.WaterReduction).HasPrecision(12, 3);
             entity.Property(x => x.BagWeight).HasPrecision(12, 3);
@@ -348,82 +394,82 @@ public class ApplicationDbContext : DbContext
             });
         });
 
-        modelBuilder.Entity<FinancialLedgerEntry>(entity =>
+        modelBuilder.Entity<DeviceToken>(entity =>
         {
-            entity.ToTable("FinancialLedgerEntries");
+            entity.ToTable("DeviceTokens");
 
             entity.HasKey(x => x.Id);
 
-            entity.Property(x => x.TransactionType)
-                .HasConversion<string>()
-                .HasMaxLength(40)
+            entity.Property(x => x.Token)
+                .HasMaxLength(4096)
                 .IsRequired();
 
-            entity.Property(x => x.Direction)
-                .HasConversion<string>()
+            entity.Property(x => x.Platform)
                 .HasMaxLength(20)
                 .IsRequired();
 
-            entity.Property(x => x.Amount)
-                .HasPrecision(14, 2)
-                .IsRequired();
-
-            entity.Property(x => x.Description)
-                .HasMaxLength(250)
-                .IsRequired();
-
-            entity.Property(x => x.Reference)
-                .HasMaxLength(100);
-
-            entity.Property(x => x.OccurredAt)
-                .IsRequired();
-
-            entity.Property(x => x.CreatedAt)
-                .IsRequired();
-
-            entity.Property(x => x.DeductionId);
-
-            entity.HasOne(x => x.Farmer)
+            entity.HasOne(x => x.User)
                 .WithMany()
-                .HasForeignKey(x => x.FarmerId)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One device token must not be registered to multiple users.
+            entity.HasIndex(x => x.Token)
+                .IsUnique();
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.IsActive
+            });
+        });
+
+        modelBuilder.Entity<OfflineCollectionSync>(entity =>
+        {
+            entity.ToTable("OfflineCollectionSyncs");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.ErrorMessage)
+                .HasMaxLength(1000);
+
+            // A collector cannot submit the same operation twice.
+            entity.HasIndex(x => new
+            {
+                x.CollectorUserId,
+                x.ClientOperationId
+            })
+            .IsUnique();
+
+            entity.HasIndex(x => x.RequestId);
+
+            entity.HasIndex(x => new
+            {
+                x.CollectorUserId,
+                x.Status,
+                x.ReceivedAt
+            });
+
+            entity.HasOne(x => x.CollectorUser)
+                .WithMany()
+                .HasForeignKey(x => x.CollectorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Request)
+                .WithMany()
+                .HasForeignKey(x => x.RequestId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(x => x.Collection)
                 .WithMany()
                 .HasForeignKey(x => x.CollectionId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasIndex(x => new
-            {
-                x.FarmerId,
-                x.OccurredAt
-            });
-
-            entity.HasIndex(x => new
-            {
-                x.TransactionType,
-                x.Direction,
-                x.OccurredAt
-            });
-
-            entity.HasIndex(x => new
-            {
-                x.CollectionId,
-                x.TransactionType
-            })
-            .IsUnique()
-            .HasFilter("\"CollectionId\" IS NOT NULL");
-
-            entity.ToTable(table =>
-            {
-                table.HasCheckConstraint(
-                    "CK_FinancialLedgerEntries_Amount",
-                    "\"Amount\" > 0");
-            });
-
-            entity.HasIndex(x => x.DeductionId)
-            .IsUnique()
-            .HasFilter("\"DeductionId\" IS NOT NULL");
         });
+
     }
 }

@@ -4,6 +4,7 @@ using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Loans;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -45,6 +46,10 @@ public sealed class LoanService : ILoanService
         if (repaymentAmount <= 0)
             throw new ArgumentException(
                 "Repayment amount must be greater than zero.");
+        FinancialValidation.ValidateAmount(
+            repaymentAmount, nameof(repaymentAmount));
+        FinancialValidation.ValidateAmount(
+            outstandingBalance, nameof(outstandingBalance));
 
         if (outstandingBalance <= 0)
             throw new InvalidOperationException(
@@ -112,6 +117,7 @@ public sealed class LoanService : ILoanService
                 Id = x.Id,
                 LoanId = x.LoanId,
                 Amount = x.Amount,
+                PaymentMethod = x.PaymentMethod,
                 PaidAt = x.PaidAt,
                 RecordedByUserId = x.RecordedByUserId,
                 Reference = x.Reference,
@@ -136,18 +142,9 @@ public sealed class LoanService : ILoanService
         CreateLoanDto input,
         CancellationToken ct)
     {
-        if (input.PrincipalAmount <= 0)
-            throw new ArgumentException(
-                "Loan amount must be greater than zero.");
-
-        var amount = decimal.Round(
+        var amount = FinancialValidation.ValidatePositiveAmount(
             input.PrincipalAmount,
-            2,
-            MidpointRounding.AwayFromZero);
-
-        if (amount != input.PrincipalAmount)
-            throw new ArgumentException(
-                "Loan amount can have a maximum of two decimal places.");
+            nameof(input.PrincipalAmount));
 
         var collectorId = await GetCollectorIdAsync(
             collectorUserId, ct);
@@ -197,7 +194,7 @@ public sealed class LoanService : ILoanService
             CollectionId = null,
             TransactionType =
                 FinancialTransactionType.LoanDisbursement,
-            Direction = FinancialDirection.Debit,
+            Direction = FinancialDirection.Credit,
             Amount = amount,
             Description = "Loan issued to farmer",
             Reference = loan.Id.ToString(),
@@ -242,18 +239,9 @@ public sealed class LoanService : ILoanService
         CreateLoanRepaymentDto input,
         CancellationToken ct)
     {
-        if (input.Amount <= 0)
-            throw new ArgumentException(
-                "Repayment amount must be greater than zero.");
-
-        var amount = decimal.Round(
+        var amount = FinancialValidation.ValidatePositiveAmount(
             input.Amount,
-            2,
-            MidpointRounding.AwayFromZero);
-
-        if (amount != input.Amount)
-            throw new ArgumentException(
-                "Repayment amount can have a maximum of two decimal places.");
+            nameof(input.Amount));
 
         var collectorId = await GetCollectorIdAsync(
             collectorUserId, ct);
@@ -302,6 +290,7 @@ public sealed class LoanService : ILoanService
             Id = Guid.NewGuid(),
             LoanId = loan.Id,
             Amount = amount,
+            PaymentMethod = input.PaymentMethod,
             PaidAt = paidAt,
             RecordedByUserId = collectorUserId,
             Reference = string.IsNullOrWhiteSpace(input.Reference)
@@ -318,6 +307,7 @@ public sealed class LoanService : ILoanService
             Id = Guid.NewGuid(),
             FarmerId = loan.FarmerId,
             CollectionId = null,
+            LoanRepaymentId = repayment.Id,
             TransactionType =
                 FinancialTransactionType.LoanRepayment,
             Direction = FinancialDirection.Debit,
@@ -362,6 +352,7 @@ public sealed class LoanService : ILoanService
             Id = repayment.Id,
             LoanId = repayment.LoanId,
             Amount = repayment.Amount,
+            PaymentMethod = repayment.PaymentMethod,
             PaidAt = repayment.PaidAt,
             RecordedByUserId = repayment.RecordedByUserId,
             Reference = repayment.Reference,

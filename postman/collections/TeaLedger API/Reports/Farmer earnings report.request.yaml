@@ -1,0 +1,7 @@
+$kind: http-request
+name: Farmer earnings report
+url: "{{baseUrl}}/api/reports/farmer/earnings?from={{fromDate}}&to={{toDate}}&page={{page}}&pageSize={{pageSize}}"
+method: GET
+auth:
+  type: inherit
+order: 8000

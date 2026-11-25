@@ -1,0 +1,31 @@
+$kind: http-request
+name: Create monthly settlement
+description: Requires an Admin JWT from Authentication / Admin login. Set loanRepaymentAmount to withhold an installment from this settlement; zero skips the optional repayment. Saves the returned settlement ID to the environment.
+url: "{{baseUrl}}/api/settlements"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "farmerId": "{{farmerId}}",
+      "year": {{year}},
+      "month": {{month}},
+      "loanRepaymentAmount": {{loanRepaymentAmount}}
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Settlement created", function () {
+          pm.response.to.have.status(201);
+      });
+      if (pm.response.code === 201) {
+          const body = pm.response.json();
+          if (body.id) pm.environment.set("settlementId", body.id);
+      }
+order: 1000

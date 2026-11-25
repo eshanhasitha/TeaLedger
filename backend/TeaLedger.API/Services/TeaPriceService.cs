@@ -4,6 +4,7 @@ using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.TeaPrices;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -126,6 +127,69 @@ public sealed class TeaPriceService : ITeaPriceService
 
         await _db.SaveChangesAsync(ct);
 
+        var pricedMonthStart = new DateTime(
+            input.Year, input.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var pricedMonthEnd = pricedMonthStart.AddMonths(1);
+        
+        var collections = await _db.Collections
+            .Where(x =>
+                x.CollectorId == collectorId &&
+                x.CollectedAt >= effectiveFrom &&
+                x.CollectedAt < pricedMonthEnd &&
+                (x.Status == CollectionStatus.Collected ||
+                x.Status == CollectionStatus.Synced))
+            .ToListAsync(ct);
+
+
+        foreach (var collection in collections)
+        {
+            collection.PricePerKg = input.PricePerKg;
+            collection.TotalAmount = CalculateAmount(
+                collection.FinalWeight, input.PricePerKg);
+            collection.UpdatedAt = now;
+
+            var ledgerEntry = await _db.FinancialLedgerEntries
+                .SingleOrDefaultAsync(
+                    x => x.CollectionId == collection.Id &&
+                         x.TransactionType == FinancialTransactionType.CollectionEarning,
+                    ct);
+            if (ledgerEntry is null)
+            {
+                ledgerEntry = new FinancialLedgerEntry
+                {
+                    Id = Guid.NewGuid(),
+                    FarmerId = collection.FarmerId,
+                    CollectionId = collection.Id,
+                    TransactionType = FinancialTransactionType.CollectionEarning,
+                    Direction = FinancialDirection.Credit,
+                    Description = "Verified tea collection earning",
+                    Reference = collection.Id.ToString(),
+                    OccurredAt = collection.CollectedAt,
+                    CreatedAt = now
+                };
+                _db.FinancialLedgerEntries.Add(ledgerEntry);
+            }
+
+            ledgerEntry.TransactionType =
+                FinancialTransactionType.CollectionEarning;
+            ledgerEntry.Direction = FinancialDirection.Credit;
+            ledgerEntry.Amount = collection.TotalAmount;
+
+            await _activityLog.RecordAsync(
+                actorUserId,
+                "CollectionEarningPriced",
+                nameof(FinancialLedgerEntry),
+                ledgerEntry.Id,
+                $"CollectionId={collection.Id}; " +
+                $"FarmerId={collection.FarmerId}; " +
+                $"FinalWeight={collection.FinalWeight}; " +
+                $"PricePerKg={input.PricePerKg}; " +
+                $"Amount={collection.TotalAmount}",
+                ct);
+        }
+
+        await _db.SaveChangesAsync(ct);
+
         var details = JsonSerializer.Serialize(new
         {
             CollectorId = collectorId,
@@ -134,7 +198,8 @@ public sealed class TeaPriceService : ITeaPriceService
             OldPricePerKg = oldPrice,
             NewPricePerKg = input.PricePerKg,
             OldEffectiveFrom = oldEffectiveFrom,
-            NewEffectiveFrom = effectiveFrom
+            NewEffectiveFrom = effectiveFrom,
+            PricedCollectionCount = collections.Count
         });
 
         await _activityLog.RecordAsync(
@@ -334,12 +399,10 @@ public sealed class TeaPriceService : ITeaPriceService
         if (input.Month < 1 || input.Month > 12)
             throw new ArgumentException("Invalid month.");
 
-        if (input.PricePerKg <= 0 ||
-            input.PricePerKg > 1_000_000)
-        {
-            throw new ArgumentException(
-                "Price per kg must be greater than zero and within the allowed limit.");
-        }
+        FinancialValidation.ValidatePositiveAmount(
+            input.PricePerKg,
+            nameof(input.PricePerKg),
+            1_000_000m);
 
         if (input.EffectiveFrom == default)
             throw new ArgumentException(

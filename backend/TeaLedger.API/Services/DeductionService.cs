@@ -4,6 +4,7 @@ using TeaLedger.API.Data;
 using TeaLedger.API.DTOs.Deductions;
 using TeaLedger.API.Interfaces;
 using TeaLedger.API.Models;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -23,42 +24,24 @@ public sealed class DeductionService : IDeductionService
         if (quantity <= 0)
             throw new ArgumentException(
                 "Quantity must be greater than zero.");
-
-        if (decimal.Round(
-                quantity,
-                3,
-                MidpointRounding.AwayFromZero) != quantity)
-        {
-            throw new ArgumentException(
-                "Quantity can have a maximum of three decimal places.");
-        }
+        FinancialValidation.ValidateQuantity(
+            quantity, nameof(quantity), 100_000_000m);
 
         if (unitPrice <= 0)
             throw new ArgumentException(
                 "Unit price must be greater than zero.");
+        FinancialValidation.ValidateAmount(
+            unitPrice, nameof(unitPrice), 100_000_000m);
 
         var amount = decimal.Round(
             quantity * unitPrice,
             2,
             MidpointRounding.AwayFromZero);
 
-        if (amount <= 0)
-            throw new ArgumentException(
-                "Calculated deduction must be greater than zero.");
+        FinancialValidation.ValidatePositiveAmount(
+            amount, nameof(amount));
 
         return amount;
-    }
-
-    private static void ValidateMoneyPrecision(decimal value)
-    {
-        if (decimal.Round(
-                value,
-                2,
-                MidpointRounding.AwayFromZero) != value)
-        {
-            throw new ArgumentException(
-                "Money values can have at most two decimal places.");
-        }
     }
 
     private static DateTime StartUtc(DateOnly date) =>
@@ -159,11 +142,14 @@ public sealed class DeductionService : IDeductionService
             throw new ArgumentException(
                 "Unit is required.");
 
-        if (input.Quantity <= 0 || input.UnitPrice <= 0)
-            throw new ArgumentException(
-                "Quantity and unit price must be greater than zero.");
-
-        ValidateMoneyPrecision(input.UnitPrice);
+        FinancialValidation.ValidatePositiveQuantity(
+            input.Quantity,
+            nameof(input.Quantity),
+            100_000_000m);
+        FinancialValidation.ValidatePositiveAmount(
+            input.UnitPrice,
+            nameof(input.UnitPrice),
+            100_000_000m);
 
         var amount = CalculateAmount(
             input.Quantity,

@@ -22,6 +22,13 @@ public sealed class LoanRepaymentConfiguration
             .HasPrecision(14, 2)
             .IsRequired();
 
+        entity.Property(x => x.PaymentMethod)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(LoanRepaymentMethod.Cash)
+            .HasSentinel(LoanRepaymentMethod.Cash)
+            .IsRequired();
+
         entity.Property(x => x.Reference)
             .HasMaxLength(100);
 

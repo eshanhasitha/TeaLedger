@@ -1,5 +1,6 @@
 $kind: http-request
 name: Record repayment
+description: Set paymentMethod to Cash for a direct payment or TeaProceeds when this repayment should be withheld from the farmer's tea income settlement.
 url: "{{baseUrl}}/api/loans/{{loanId}}/repayments"
 method: POST
 headers:
@@ -9,6 +10,7 @@ body:
   content: |-
     {
       "amount": 2500.00,
+      "paymentMethod": "Cash",
       "paidAt": "2026-11-03T07:30:00Z",
       "reference": "CASH-001",
       "notes": "First installment"

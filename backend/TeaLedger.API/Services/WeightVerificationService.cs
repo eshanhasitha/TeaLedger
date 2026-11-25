@@ -4,6 +4,7 @@ using TeaLedger.API.DTOs.Collections;
 using TeaLedger.API.DTOs.Passbook;
 using TeaLedger.API.Models;
 using TeaLedger.API.Interfaces;
+using TeaLedger.API.Validation;
 
 namespace TeaLedger.API.Services;
 
@@ -86,6 +87,15 @@ public class WeightVerificationService
             throw new InvalidOperationException(
                 "This collection has already been verified.");
 
+        FinancialValidation.ValidatePositiveQuantity(
+            input.GrossWeight, nameof(input.GrossWeight), 1_000_000m);
+        FinancialValidation.ValidateQuantity(
+            input.WaterReduction, nameof(input.WaterReduction), 1_000_000m);
+        FinancialValidation.ValidateQuantity(
+            input.BagWeight, nameof(input.BagWeight), 1_000_000m);
+        FinancialValidation.ValidateQuantity(
+            input.OtherReduction, nameof(input.OtherReduction), 1_000_000m);
+
         var finalWeight = CalculateFinalWeight(
             input.GrossWeight,
             input.WaterReduction,
@@ -111,16 +121,11 @@ public class WeightVerificationService
             .OrderByDescending(x => x.EffectiveFrom)
             .FirstOrDefaultAsync(ct);
 
-        if (applicablePrice is null)
-        {
-            throw new InvalidOperationException(
-                "No tea price is configured for the collection date. " +
-                "Please set the monthly tea price before verifying this collection.");
-        }
-
-        var totalAmount = TeaPriceService.CalculateAmount(
-            finalWeight,
-            applicablePrice.PricePerKg);
+        var totalAmount = applicablePrice is null
+            ? 0m
+            : TeaPriceService.CalculateAmount(
+                finalWeight,
+                applicablePrice.PricePerKg);
 
         await using var transaction =
             await _db.Database.BeginTransactionAsync(ct);
@@ -131,7 +136,7 @@ public class WeightVerificationService
         collection.OtherReduction = input.OtherReduction;
         collection.FinalWeight = finalWeight;
         collection.Status = CollectionStatus.Collected;
-        collection.PricePerKg = applicablePrice.PricePerKg;
+        collection.PricePerKg = applicablePrice?.PricePerKg ?? 0m;
         collection.TotalAmount = totalAmount;
         collection.UpdatedAt = now;
 
@@ -148,6 +153,7 @@ public class WeightVerificationService
             VerifiedAt = now
         };
 
+        
         var passbookEntry = new PassbookEntry
         {
             Id = Guid.NewGuid(),
@@ -159,43 +165,45 @@ public class WeightVerificationService
             RecordedAt = now
         };
 
-        var ledgerEntry = new FinancialLedgerEntry
-        {
-            Id = Guid.NewGuid(),
-            FarmerId = collection.FarmerId,
-            CollectionId = collection.Id,
-            TransactionType =
-                FinancialTransactionType.CollectionEarning,
-            Direction = FinancialDirection.Credit,
-            Amount = totalAmount,
-            Description = "Verified tea collection earning",
-            Reference = collection.Id.ToString(),
-            OccurredAt = now,
-            CreatedAt = now
-        };
-
-        var auditEntry = new ActivityLog
-        {
-            Id = Guid.NewGuid(),
-            ActorUserId = collectorUserId,
-            Action = "CollectionEarningRecorded",
-            EntityType = "FinancialLedgerEntry",
-            EntityId = ledgerEntry.Id,
-            Details =
-                $"CollectionId={collection.Id}; " +
-                $"FarmerId={collection.FarmerId}; " +
-                $"FinalWeight={finalWeight}; " +
-                $"PricePerKg={applicablePrice.PricePerKg}; " +
-                $"Amount={totalAmount}",
-            OccurredAt = now
-        };
-
         _db.WeightVerifications.Add(verification);
         _db.PassbookEntries.Add(passbookEntry);
-        _db.FinancialLedgerEntries.Add(ledgerEntry);
-        _db.ActivityLogs.Add(auditEntry);
+
+        // If the applicable monthly price already exists, create the
+        // earning ledger entry in this same transaction.
+        // If no price exists, TeaPriceService will create it when a
+        // price is subsequently configured.
+        if (applicablePrice is not null && totalAmount > 0m)
+        {
+            var earningEntry = new FinancialLedgerEntry
+            {
+                Id = Guid.NewGuid(),
+                FarmerId = collection.FarmerId,
+                CollectionId = collection.Id,
+                TransactionType =
+                    FinancialTransactionType.CollectionEarning,
+                Direction = FinancialDirection.Credit,
+                Amount = totalAmount,
+                Description = "Verified tea collection earning",
+                Reference = collection.Id.ToString(),
+                OccurredAt = collection.CollectedAt,
+                CreatedAt = now
+            };
+
+            _db.FinancialLedgerEntries.Add(earningEntry);
+        }
 
         await _db.SaveChangesAsync(ct);
+
+        await _activityLog.RecordAsync(
+            collectorUserId,
+            "CollectionWeightVerified",
+            nameof(Collection),
+            collection.Id,
+            $"FinalWeight={finalWeight}; " +
+            $"MonthlyPriceAvailable={applicablePrice is not null}; " +
+            $"TotalAmount={totalAmount}",
+            ct);
+
         await transaction.CommitAsync(ct);
 
         return new PassbookEntryDto
@@ -209,5 +217,6 @@ public class WeightVerificationService
             TotalAmount = collection.TotalAmount,
             RecordedAt = passbookEntry.RecordedAt
         };
+
     }
 }

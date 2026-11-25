@@ -1,0 +1,7 @@
+$kind: http-request
+name: Admin collections report
+url: "{{baseUrl}}/api/reports/collections?from={{fromDate}}&to={{toDate}}&farmerId={{farmerId}}&collectorId={{collectorId}}&page={{page}}&pageSize={{pageSize}}"
+method: GET
+auth:
+  type: inherit
+order: 1000

@@ -1,6 +1,7 @@
-namespace TeaLedger.API.Interfaces;
 
 using TeaLedger.API.Models;
+
+namespace TeaLedger.API.Interfaces;
 
 public interface INotificationService
 {
@@ -19,5 +20,16 @@ public interface INotificationService
     Task<bool> MarkAsReadAsync(
         Guid userId,
         Guid notificationId,
+        CancellationToken cancellationToken = default);
+
+    Task RegisterDeviceTokenAsync(
+        Guid userId,
+        string token,
+        string platform,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> RemoveDeviceTokenAsync(
+        Guid userId,
+        string token,
         CancellationToken cancellationToken = default);
 }

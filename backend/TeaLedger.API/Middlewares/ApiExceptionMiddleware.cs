@@ -1,5 +1,6 @@
 
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace TeaLedger.API.Middleware;
 
@@ -24,29 +25,68 @@ public sealed class ApiExceptionMiddleware
         }
         catch (Exception exception)
         {
-            _logger.LogError(
-                exception,
-                "Unhandled error for {Method} {Path}",
-                context.Request.Method,
-                context.Request.Path);
-
             if (context.Response.HasStarted)
                 throw;
 
-            context.Response.Clear();
-            context.Response.StatusCode =
-                StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var response = new
+            var (statusCode, title, detail) = exception switch
             {
-                success = false,
-                message = "An unexpected server error occurred.",
-                traceId = context.TraceIdentifier
+                ArgumentException => (
+                    StatusCodes.Status400BadRequest,
+                    "Invalid request",
+                    exception.Message),
+                UnauthorizedAccessException => (
+                    StatusCodes.Status403Forbidden,
+                    "Forbidden",
+                    exception.Message),
+                KeyNotFoundException => (
+                    StatusCodes.Status404NotFound,
+                    "Resource not found",
+                    exception.Message),
+                InvalidOperationException => (
+                    StatusCodes.Status409Conflict,
+                    "Request conflict",
+                    exception.Message),
+                _ => (
+                    StatusCodes.Status500InternalServerError,
+                    "Server error",
+                    "An unexpected server error occurred.")
             };
 
-            await context.Response.WriteAsync(
-                JsonSerializer.Serialize(response));
+            if (statusCode >= 500)
+            {
+                _logger.LogError(
+                    exception,
+                    "Unhandled error for {Method} {Path}",
+                    context.Request.Method,
+                    context.Request.Path);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Request failed for {Method} {Path} with status {StatusCode}",
+                    context.Request.Method,
+                    context.Request.Path,
+                    statusCode);
+            }
+
+            context.Response.Clear();
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/problem+json";
+
+            var problem = new ProblemDetails
+            {
+                Status = statusCode,
+                Title = title,
+                Detail = detail,
+                Type = $"https://httpstatuses.com/{statusCode}"
+            };
+            problem.Extensions["traceId"] = context.TraceIdentifier;
+
+            await JsonSerializer.SerializeAsync(
+                context.Response.Body,
+                problem,
+                cancellationToken: context.RequestAborted);
         }
     }
 }

@@ -1,5 +1,11 @@
 namespace TeaLedger.API.Models;
 
+public enum LoanRepaymentMethod
+{
+    Cash = 1,
+    TeaProceeds = 2
+}
+
 public sealed class LoanRepayment
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -7,6 +13,9 @@ public sealed class LoanRepayment
     public Guid LoanId { get; set; }
 
     public decimal Amount { get; set; }
+
+    public LoanRepaymentMethod PaymentMethod { get; set; } =
+        LoanRepaymentMethod.Cash;
 
     public DateTime PaidAt { get; set; } = DateTime.UtcNow;
 
@@ -19,4 +28,5 @@ public sealed class LoanRepayment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Loan Loan { get; set; } = null!;
+    public FinancialLedgerEntry? LedgerEntry { get; set; }
 }

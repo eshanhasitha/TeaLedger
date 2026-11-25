@@ -1,4 +1,4 @@
-import { Banknote, Check, FilePlus2, Printer } from 'lucide-react'
+﻿import { Banknote, Check, FilePlus2, Printer } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/layout/PageHeader'
@@ -33,7 +33,7 @@ export default function SettlementsPage() {
 
   const inPeriod = L.settlements.filter((s) => s.period === period)
   const rows = show === 'all' ? inPeriod : inPeriod.filter((s) => s.status === show)
-  const sum = (xs: Settlement[], k: 'net' | 'kg' | 'deductions' | 'grossAmount') => xs.reduce((a, s) => a + s[k], 0)
+  const sum = (xs: Settlement[], k: 'net' | 'kg' | 'deductions' | 'grossAmount' | 'loanRepayments') => xs.reduce((a, s) => a + s[k], 0)
   const pendingLines = L.collections.filter((c) => c.status === 'Pending' && periodOf(toISODate(new Date(c.collectedAt))) === period).length
 
   const columns: Column<Settlement>[] = [
@@ -41,7 +41,7 @@ export default function SettlementsPage() {
     { key: 'farmer', header: 'Farmer', sort: (s) => L.farmerById.get(s.farmerId)?.name ?? '', render: (s) => L.farmerById.get(s.farmerId)?.name ?? 'Removed farmer' },
     { key: 'kg', header: 'Leaf', align: 'right', sort: (s) => s.kg, render: (s) => <span className="figure">{formatNumber(s.kg, 1)} kg</span> },
     { key: 'gross', header: 'Earned', align: 'right', sort: (s) => s.grossAmount, render: (s) => <span className="figure text-[var(--ink-2)]">{formatCurrency(s.grossAmount)}</span> },
-    { key: 'ded', header: 'Less', align: 'right', sort: (s) => s.deductions, render: (s) => <span className="figure text-[var(--margin)]">−{formatNumber(s.deductions, 2)}</span> },
+    { key: 'ded', header: 'Less', align: 'right', sort: (s) => s.deductions, render: (s) => <span className="figure text-[var(--margin)]">âˆ’{formatNumber(s.deductions, 2)}</span> },
     { key: 'net', header: 'Net pay', align: 'right', sort: (s) => s.net, render: (s) => <span className="figure font-medium">{formatCurrency(s.net)}</span> },
     { key: 'st', header: 'Status', sort: (s) => s.status, render: (s) => <Badge status={s.status} /> },
   ]
@@ -95,11 +95,12 @@ export default function SettlementsPage() {
         ))}
       </div>
 
-      <section className="rise mb-10 grid grid-cols-2 border-y border-[var(--ink)] lg:grid-cols-4" style={{ animationDelay: '100ms' }}>
+      <section className="rise mb-10 grid grid-cols-2 border-y border-[var(--ink)] lg:grid-cols-5" style={{ animationDelay: '100ms' }}>
         {[
           ['Leaf settled', formatKg(sum(inPeriod, 'kg'))],
           ['Earned', formatCurrency(sum(inPeriod, 'grossAmount'))],
           ['Deductions', formatCurrency(sum(inPeriod, 'deductions'))],
+          ['Loan repayments', formatCurrency(sum(inPeriod, 'loanRepayments'))],
           ['Net payable', formatCurrency(sum(inPeriod, 'net'))],
         ].map(([k, v], i) => (
           <div key={k} className={`px-4 py-5 sm:px-6 ${i % 2 ? 'border-l' : ''} ${i > 1 ? 'max-lg:border-t' : ''} ${i === 2 ? 'lg:border-l' : ''} border-[var(--hair)]`}>
@@ -111,7 +112,7 @@ export default function SettlementsPage() {
 
       {pendingLines > 0 && (
         <p className="rise mb-6 border-l-2 border-[var(--amber)] pl-3 text-[13px] text-[var(--ink-2)]">
-          {pendingLines} weigh-ins in {formatPeriod(period)} are still pending and won’t be included.{' '}
+          {pendingLines} weigh-ins in {formatPeriod(period)} are still pending and wonâ€™t be included.{' '}
           <Link to="/collections?status=Pending" className="underline underline-offset-4">
             Verify them first
           </Link>
@@ -181,7 +182,7 @@ export default function SettlementsPage() {
               <div>
                 <p className="text-[16px]">{L.farmerById.get(slip.farmerId)?.name}</p>
                 <p className="figure text-[12px] text-[var(--ink-3)]">
-                  {L.farmerById.get(slip.farmerId)?.code} · {formatPeriod(slip.period)}
+                  {L.farmerById.get(slip.farmerId)?.code} Â· {formatPeriod(slip.period)}
                 </p>
               </div>
               <Badge status={slip.status} />
@@ -189,15 +190,32 @@ export default function SettlementsPage() {
             <dl className="figure mt-6 text-[13.5px]">
               {[
                 ['Green leaf', formatKg(slip.kg)],
-                ['Earned', formatCurrency(slip.grossAmount)],
-                ['Transport @ Rs 3/kg', `−${formatCurrency(slip.kg * 3)}`],
-                ['Advances', `−${formatCurrency(slip.deductions - slip.kg * 3)}`],
+                ['Average tea price', `${formatCurrency(slip.averageTeaPricePerKg)} / kg`],
+                ['Gross tea income', formatCurrency(slip.grossAmount)],
+                ['Deduction quantity', formatKg(slip.totalDeductionQuantityKg)],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between border-b border-dashed border-[var(--hair)] py-2.5">
                   <dt className="font-sans text-[var(--ink-2)]">{k}</dt>
                   <dd>{v}</dd>
                 </div>
               ))}
+              <div className="border-b border-dashed border-[var(--hair)] py-2.5">
+                <p className="mb-1 font-sans text-[var(--ink-2)]">Material deductions</p>
+                {slip.deductionBreakdown.map((deduction, index) => (
+                  <div key={`${deduction.category}-${deduction.unit}-${index}`} className="flex justify-between gap-3 py-1">
+                    <span>{deduction.category} - {formatNumber(deduction.quantity, 2)} {deduction.unit} x {formatCurrency(deduction.unitPrice)}</span>
+                    <span>{formatCurrency(deduction.amount)}</span>
+                  </div>
+                ))}
+                <div className="mt-1 flex justify-between font-medium">
+                  <span>Total material deductions</span>
+                  <span>{formatCurrency(slip.deductions)}</span>
+                </div>
+              </div>
+              <div className="flex justify-between border-b border-dashed border-[var(--hair)] py-2.5">
+                <dt className="font-sans text-[var(--ink-2)]">Loan repayments</dt>
+                <dd>{formatCurrency(slip.loanRepayments)}</dd>
+              </div>
               <div className="flex items-baseline justify-between border-b-[3px] border-double border-[var(--ink)] py-3">
                 <dt className="font-sans">Net pay</dt>
                 <dd className="font-display text-[34px]">{formatCurrency(slip.net)}</dd>

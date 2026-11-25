@@ -382,16 +382,27 @@ public sealed class EarningsService : IEarningsService
             .Select(x => new FinancialLedgerEntryDto
             {
                 Id = x.Id,
+        
                 CollectionId = x.CollectionId,
+        
+                DeductionId = x.DeductionId,
+        
+                LoanRepaymentId = x.LoanRepaymentId,
+        
                 TransactionType = x.TransactionType,
+        
                 Direction = x.Direction,
+        
                 Amount = x.Amount,
+        
                 Description = x.Description,
+        
                 Reference = x.Reference,
+        
                 OccurredAt = x.OccurredAt
             })
             .ToListAsync(ct);
-    }
+            }
 
     public async Task<EarningsReconciliationDto> ReconcileAsync(
         DateOnly from,
@@ -446,6 +457,107 @@ public sealed class EarningsService : IEarningsService
             CollectionsWithoutLedgerEntry = missingCount,
             IsBalanced = difference == 0m && missingCount == 0
         };
+    }
+
+    public async Task<FarmerFinancialSummaryDto>
+        GetFarmerFinancialSummaryAsync(
+            Guid farmerUserId,
+            DateOnly from,
+            DateOnly to,
+            CancellationToken ct)
+    {
+            if (from > to)
+            {
+                throw new ArgumentException(
+                    "From date cannot be after To date.");
+            }
+        
+            var farmerId = await GetFarmerIdAsync(
+                farmerUserId,
+                ct);
+        
+            var start = StartUtc(from);
+            var end = EndExclusiveUtc(to);
+        
+            var entries = await _db.FinancialLedgerEntries
+                .AsNoTracking()
+                .Where(x =>
+                    x.FarmerId == farmerId &&
+                    x.OccurredAt >= start &&
+                    x.OccurredAt < end)
+                .Select(x => new
+                {
+                    x.TransactionType,
+                    x.Direction,
+                    x.Amount
+                })
+                .ToListAsync(ct);
+        
+            decimal Sum(
+                FinancialTransactionType type,
+                FinancialDirection direction)
+            {
+                return entries
+                    .Where(x =>
+                        x.TransactionType == type &&
+                        x.Direction == direction)
+                    .Sum(x => x.Amount);
+            }
+        
+            var totalCredits = entries
+                .Where(x =>
+                    x.Direction == FinancialDirection.Credit)
+                .Sum(x => x.Amount);
+        
+            var totalDebits = entries
+                .Where(x =>
+                    x.Direction == FinancialDirection.Debit)
+                .Sum(x => x.Amount);
+        
+            return new FarmerFinancialSummaryDto
+            {
+                FarmerId = farmerId,
+        
+                From = from,
+        
+                To = to,
+        
+                CollectionEarnings = Sum(
+                    FinancialTransactionType.CollectionEarning,
+                    FinancialDirection.Credit),
+        
+                MaterialDeductions = Sum(
+                    FinancialTransactionType.Deduction,
+                    FinancialDirection.Debit),
+        
+                LoanDisbursements = Sum(
+                    FinancialTransactionType.LoanDisbursement,
+                    FinancialDirection.Credit),
+        
+                LoanRepayments = Sum(
+                    FinancialTransactionType.LoanRepayment,
+                    FinancialDirection.Debit),
+        
+                SettlementPayments = Sum(
+                    FinancialTransactionType.SettlementPayment,
+                    FinancialDirection.Debit),
+        
+                AdjustmentCredits = Sum(
+                    FinancialTransactionType.Adjustment,
+                    FinancialDirection.Credit),
+        
+                AdjustmentDebits = Sum(
+                    FinancialTransactionType.Adjustment,
+                    FinancialDirection.Debit),
+        
+                TotalCredits = totalCredits,
+        
+                TotalDebits = totalDebits,
+        
+                NetLedgerMovement = totalCredits - totalDebits,
+        
+                TransactionCount = entries.Count
+            };
     }
 
     private static void ValidateRange(

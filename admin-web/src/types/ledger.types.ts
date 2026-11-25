@@ -45,11 +45,23 @@ export interface Settlement {
   farmerId: string
   period: string // YYYY-MM
   kg: number
+  averageTeaPricePerKg: number
   grossAmount: number
   deductions: number
+  totalDeductionQuantityKg: number
+  deductionBreakdown: SettlementDeduction[]
+  loanRepayments: number
   net: number
   status: SettlementStatus
   createdAt: string
+}
+
+export interface SettlementDeduction {
+  category: string
+  quantity: number
+  unit: string
+  unitPrice: number
+  amount: number
 }
 
 export interface TeaPrice {
