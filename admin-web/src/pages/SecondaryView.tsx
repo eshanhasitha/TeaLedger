@@ -1,5 +1,4 @@
 import {
-  Users,
   Leaf,
   Scale,
   ClipboardList,
@@ -11,15 +10,14 @@ import {
 } from 'lucide-react';
 import { useDashboard } from '../hooks/useDashboard';
 import { CollectorsPage } from './Collectors/CollectorsPage';
+import { FarmersPage } from './Farmers/FarmersPage';
 
 export const SecondaryView = () => {
   const {
     activeTab,
     setActiveTab,
-    farmers,
     slips,
     requests,
-    setIsAddFarmerModalOpen,
     setIsRecordModalOpen,
     setIsSettlementModalOpen,
   } = useDashboard();
@@ -44,66 +42,7 @@ export const SecondaryView = () => {
       </div>
 
       {/* FARMERS VIEW */}
-      {activeTab === 'farmers' && (
-        <div className="rounded-2xl border border-[#ded8cc] bg-white p-5 shadow-xs space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0ece3] pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#183a27] text-white">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-[#1a2b20]">Registered Tea Growers & Smallholders</h2>
-                <p className="text-xs text-[#6e7d73]">
-                  1,428 Registered smallholders across Nuwara Eliya, Norwood, Bogawantalawa & Maskeliya
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsAddFarmerModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-[#183a27] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#122e1e]"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Enroll New Grower</span>
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-[#f0ece3] text-[10px] font-bold uppercase tracking-wider text-[#69796e]">
-                  <th className="py-2.5 px-3">CODE</th>
-                  <th className="py-2.5 px-3">GROWER NAME</th>
-                  <th className="py-2.5 px-3">DIVISION</th>
-                  <th className="py-2.5 px-3">MOBILE PHONE</th>
-                  <th className="py-2.5 px-3">ACREAGE</th>
-                  <th className="py-2.5 px-3">BANK PARTNER</th>
-                  <th className="py-2.5 px-3">ACCOUNT NO.</th>
-                  <th className="py-2.5 px-3 text-center">STATUS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f5f1e8]">
-                {farmers.map((farmer) => (
-                  <tr key={farmer.id} className="hover:bg-[#faf7f2]/80">
-                    <td className="py-3 px-3 font-bold text-[#183a27]">{farmer.code}</td>
-                    <td className="py-3 px-3 font-bold text-slate-900">{farmer.name}</td>
-                    <td className="py-3 px-3 text-slate-700">{farmer.division}</td>
-                    <td className="py-3 px-3 text-slate-600 font-mono">{farmer.phone}</td>
-                    <td className="py-3 px-3 text-slate-800 font-medium">{farmer.teaLandAcreage} Acres</td>
-                    <td className="py-3 px-3 text-slate-700">{farmer.bankName}</td>
-                    <td className="py-3 px-3 font-mono text-slate-600">{farmer.accountNumber}</td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
-                        {farmer.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {activeTab === 'farmers' && <FarmersPage />}
 
       {/* COLLECTIONS VIEW */}
       {activeTab === 'collections' && (

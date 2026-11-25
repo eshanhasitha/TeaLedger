@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { Sidebar } from '../sidebar/Sidebar';
 import { Navbar } from '../navbar/Navbar';
 import { DashboardPage } from '../../pages/Dashboard/DashboardPage';
+import { FarmersPage } from '../../pages/Farmers/FarmersPage';
+import { FarmerCreatePage } from '../../pages/Farmers/FarmerCreatePage';
 import { SecondaryView } from '../../pages/SecondaryView';
 import { useDashboard } from '../../hooks/useDashboard';
 import { RecordCollectionModal } from '../modals/RecordCollectionModal';
@@ -30,11 +32,18 @@ export const AppLayout: React.FC = () => {
   useEffect(() => {
     if (location.pathname === '/collectors' && activeTab !== 'collectors') {
       setActiveTab('collectors');
+    } else if (
+      (location.pathname === '/farmers' || location.pathname === '/farmers/new') &&
+      activeTab !== 'farmers'
+    ) {
+      setActiveTab('farmers');
+    } else if (location.pathname === '/dashboard' && activeTab !== 'dashboard') {
+      setActiveTab('dashboard');
     }
   }, [location.pathname, activeTab, setActiveTab]);
 
   return (
-    <div className="flex min-h-screen bg-[#f7f5f0]">
+    <div className="flex min-h-screen bg-surface-bg font-['Inter',sans-serif]">
       {/* Sidebar Navigation */}
       <Sidebar
         mobileOpen={mobileMenuOpen}
@@ -43,10 +52,21 @@ export const AppLayout: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col min-w-0">
-        <Navbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        {/* Mobile top navigation header with drawer toggle */}
+        <div className="lg:hidden">
+          <Navbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        </div>
 
-        <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 max-w-7xl w-full mx-auto">
-          {activeTab === 'dashboard' ? <DashboardPage /> : <SecondaryView />}
+        <main className="flex-1 w-full min-w-0 overflow-y-auto">
+          {activeTab === 'dashboard' ? (
+            <DashboardPage />
+          ) : location.pathname === '/farmers/new' ? (
+            <FarmerCreatePage />
+          ) : activeTab === 'farmers' ? (
+            <FarmersPage />
+          ) : (
+            <SecondaryView />
+          )}
         </main>
       </div>
 
@@ -71,4 +91,3 @@ export const AppLayout: React.FC = () => {
     </div>
   );
 };
-
