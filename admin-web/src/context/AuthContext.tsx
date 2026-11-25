@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import type { User, LoginCredentials, SignupFormData } from '../types/auth.types';
 import { AuthContext } from './authContextDef';
+import { authService } from '../services/authService';
 
 const TOKEN_KEY = 'tealedger_token';
 const USER_KEY = 'tealedger_user';
@@ -47,41 +48,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (credentials: LoginCredentials): Promise<void> => {
     setIsLoading(true);
     try {
-      // Simulate network request latency
-      await new Promise((resolve) => setTimeout(resolve, 850));
-
-      const { email, password } = credentials;
-
-      if (!email || !password) {
-        throw new Error('Please enter both your work email and password.');
-      }
-
-      if (!email.includes('@')) {
-        throw new Error('Please enter a valid work email address.');
-      }
-
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters in length.');
-      }
-
-      // Generate mock session user & token
-      const isSunil = email.toLowerCase().includes('sunil') || email.toLowerCase().includes('admin');
-
-      const loggedUser: User = {
-        id: isSunil ? 'usr-admin-01' : `usr-${Date.now()}`,
-        name: isSunil ? 'Sunil Jayawardena' : email.split('@')[0].replace('.', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-        email: email.toLowerCase(),
-        role: isSunil ? 'Chief Estate Admin' : 'Estate Administrator',
-        division: 'Nuwara Eliya Central',
-        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=120&h=120&q=80',
-      };
-
-      const mockJwt = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(
-        JSON.stringify({ sub: loggedUser.id, role: loggedUser.role, exp: Date.now() + 86400000 })
-      )}.tealedger_signature_${Math.random().toString(36).substring(2)}`;
-
+      const { user: loggedUser, token: authToken } = await authService.login(credentials);
       setUser(loggedUser);
-      setToken(mockJwt);
+      setToken(authToken);
     } finally {
       setIsLoading(false);
     }
