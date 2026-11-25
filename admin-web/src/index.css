@@ -1,13 +1,33 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f7f5f0;
-    color: #1a231d;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+@theme {
+  --color-surface-bg: #f7f5f0;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-border-default: #e2e8f0;
+  --color-brand-primary: #15803d;
+  --color-brand-primary-hover: #166534;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-on-primary: #ffffff;
+  --color-status-success-bg: #ecfdf5;
+  --color-status-success: #047857;
+  --color-status-warning-bg: #fffbeb;
+  --color-status-warning: #b45309;
+  --color-status-info-bg: #eff6ff;
+  --color-status-info: #1d4ed8;
+  --color-status-danger-bg: #fef2f2;
+  --color-status-danger: #b91c1c;
+  --color-status-neutral-bg: #f1f5f9;
+  --color-status-neutral: #64748b;
+}
+
+body {
+  font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f7f5f0;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom scrollbars */
