@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const ReviewSlipModal: React.FC = () => {
   const { selectedSlipForReview, setSelectedSlipForReview, reviewSlip } = useDashboard();

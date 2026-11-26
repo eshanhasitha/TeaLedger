@@ -1,5 +1,5 @@
 import { X, CheckCircle2, ShieldCheck, Download } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const AuditModal = () => {
   const { isAuditModalOpen, setIsAuditModalOpen, addToast } = useDashboard();

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, Check } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const SendNotificationModal: React.FC = () => {
   const { isNotificationModalOpen, setIsNotificationModalOpen, addToast } = useDashboard();

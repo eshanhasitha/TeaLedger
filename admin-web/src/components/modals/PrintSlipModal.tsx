@@ -1,6 +1,6 @@
 import { X, Printer } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const PrintSlipModal = () => {
   const { selectedSlipForPrint, setSelectedSlipForPrint } = useDashboard();

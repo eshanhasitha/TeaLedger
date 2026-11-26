@@ -1,16 +1,18 @@
 export interface User {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  phoneNumber?: string;
   role: string;
   division: string;
   avatarUrl?: string;
 }
 
 export interface LoginCredentials {
-  email: string;
+  phoneNumber: string;
   password: string;
   rememberMe?: boolean;
+  email?: string;
 }
 
 export interface SignupFormData {
@@ -32,4 +34,3 @@ export interface AuthContextType {
   signup: (formData: SignupFormData) => Promise<void>;
   logout: () => void;
 }
-

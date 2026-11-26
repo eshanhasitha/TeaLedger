@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText, ArrowUpRight, AlertCircle, Building2 } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const OctoberFinancialStream: React.FC = () => {
   const { settlement, setIsAuditModalOpen, setIsSettlementModalOpen } = useDashboard();

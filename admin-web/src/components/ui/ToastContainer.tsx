@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, AlertTriangle, Info, AlertOctagon, X } from 'lucide-react';
-import { useDashboard } from '../../context/DashboardContext';
+import { useDashboard } from '../../hooks/useDashboard';
 
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useDashboard();
