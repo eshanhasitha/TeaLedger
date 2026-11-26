@@ -1,0 +1,15 @@
+$kind: http-request
+name: Remove device token
+url: "{{baseUrl}}/api/notifications/device-tokens?token={{deviceToken}}"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Device token removed", function () {
+          pm.response.to.have.status(204);
+      });
+order: 4000

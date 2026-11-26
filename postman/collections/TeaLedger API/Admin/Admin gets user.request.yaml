@@ -1,0 +1,9 @@
+$kind: http-request
+name: Admin gets user
+url: "{{baseUrl}}/api/admin/users/{{userId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 6000

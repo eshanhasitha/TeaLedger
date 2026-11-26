@@ -1,0 +1,25 @@
+$kind: http-request
+name: Register device token
+url: "{{baseUrl}}/api/notifications/device-tokens"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "token": "{{deviceToken}}",
+      "platform": "{{devicePlatform}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Device token registered", function () {
+          pm.response.to.have.status(200);
+          pm.expect(pm.response.json().message).to.eql("Device token registered successfully.");
+      });
+order: 1000

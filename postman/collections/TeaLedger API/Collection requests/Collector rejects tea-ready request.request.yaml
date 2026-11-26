@@ -1,0 +1,18 @@
+$kind: http-request
+name: Collector rejects tea-ready request
+url: "{{baseUrl}}/api/collection-requests/{{collectionRequestId}}/decision"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "decision": "reject",
+      "note": "{{collectorNote}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 5000

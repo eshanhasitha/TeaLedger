@@ -1,0 +1,7 @@
+$kind: http-request
+description: Get a farmer by its farmerId (not userId).
+url: "{{baseUrl}}/api/admin/farmers/{{farmerId}}"
+method: GET
+auth:
+  type: inherit
+order: 2000

@@ -1,0 +1,9 @@
+$kind: http-request
+name: Farmer views passbook
+url: "{{baseUrl}}/api/farmers/me/passbook?from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 6300

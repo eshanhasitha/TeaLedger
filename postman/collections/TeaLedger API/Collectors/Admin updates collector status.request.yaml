@@ -1,0 +1,17 @@
+$kind: http-request
+name: Admin updates collector status
+url: "{{baseUrl}}/api/admin/collectors/{{collectorId}}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "isActive": {{activeStatus}}
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 5000

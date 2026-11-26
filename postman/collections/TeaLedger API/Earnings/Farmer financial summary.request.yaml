@@ -1,0 +1,9 @@
+$kind: http-request
+name: Farmer financial summary
+url: "{{baseUrl}}/api/earnings/farmer/financial-summary?from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 5000
