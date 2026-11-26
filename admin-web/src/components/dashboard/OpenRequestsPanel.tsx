@@ -7,12 +7,12 @@ interface OpenRequestsPanelProps {
 
 export const OpenRequestsPanel: React.FC<OpenRequestsPanelProps> = ({ requests }) => {
   return (
-    <div className="w-full lg:w-80 px-5 py-4 bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start gap-3 overflow-hidden shadow-xs">
-      <div className="self-stretch justify-start text-text-primary text-base font-semibold font-['Inter']">
+    <div className="w-full lg:w-[360px] p-5 bg-white rounded-xl border border-[#DCE2DC] flex flex-col justify-start items-start gap-3">
+      <div className="text-[#17201B] text-base font-semibold">
         Open tea-ready requests
       </div>
 
-      <div className="self-stretch flex flex-col justify-start items-stretch">
+      <div className="self-stretch flex flex-col">
         {requests.map((req, index) => {
           const isPending = req.status === 'Pending';
           const isLast = index === requests.length - 1;
@@ -20,37 +20,27 @@ export const OpenRequestsPanel: React.FC<OpenRequestsPanelProps> = ({ requests }
           return (
             <div
               key={req.id}
-              className={`self-stretch py-2 ${
-                !isLast ? 'border-b border-border-default' : ''
-              } flex justify-between items-center gap-2 overflow-hidden hover:bg-slate-50/70 transition-colors rounded-lg px-1`}
+              className={`self-stretch py-2.5 ${
+                !isLast ? 'border-b border-[#DCE2DC]' : ''
+              } flex justify-between items-center gap-2`}
             >
               <div className="flex-1 flex flex-col justify-start items-start gap-0.5 overflow-hidden">
-                <div className="self-stretch justify-start text-text-primary text-sm font-semibold font-['Inter'] truncate">
+                <div className="text-[#17201B] text-sm font-semibold truncate">
                   {req.farmerName}
                 </div>
-                <div className="self-stretch justify-start text-text-secondary text-xs font-normal font-['Inter']">
+                <div className="text-[#56625B] text-xs font-normal">
                   {req.locationOrBlock} · {req.bagsCount} bags
                 </div>
               </div>
 
               {isPending ? (
-                <div
-                  data-status="warning"
-                  className="px-2.5 py-1 bg-status-warning-bg rounded-[999px] flex justify-start items-center shrink-0"
-                >
-                  <span className="justify-start text-status-warning text-xs font-semibold font-['Inter']">
-                    ◔ Pending
-                  </span>
-                </div>
+                <span className="px-2.5 py-0.5 bg-[#FEF3C7] text-[#B45309] rounded-full inline-flex items-center shrink-0 text-xs font-semibold">
+                  ◔ Pending
+                </span>
               ) : (
-                <div
-                  data-status="info"
-                  className="px-2.5 py-1 bg-status-info-bg rounded-[999px] flex justify-start items-center shrink-0"
-                >
-                  <span className="justify-start text-status-info text-xs font-semibold font-['Inter']">
-                    ● {req.status}
-                  </span>
-                </div>
+                <span className="px-2.5 py-0.5 bg-[#EFF6FF] text-[#1D4ED8] rounded-full inline-flex items-center shrink-0 text-xs font-semibold">
+                  ● {req.status}
+                </span>
               )}
             </div>
           );

@@ -89,7 +89,7 @@ export const FarmerCreatePage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-start items-start gap-6 font-['Inter',sans-serif]">
+    <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col justify-start items-start gap-6 font-['Inter',sans-serif]">
       {/* Header */}
       <div className="self-stretch flex flex-col justify-start items-start gap-1 overflow-hidden">
         <h1 className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter'] tracking-tight">

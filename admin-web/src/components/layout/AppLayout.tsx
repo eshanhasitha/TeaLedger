@@ -5,7 +5,13 @@ import { Navbar } from '../navbar/Navbar';
 import { DashboardPage } from '../../pages/Dashboard/DashboardPage';
 import { FarmersPage } from '../../pages/Farmers/FarmersPage';
 import { FarmerCreatePage } from '../../pages/Farmers/FarmerCreatePage';
-import { SecondaryView } from '../../pages/SecondaryView';
+import { CollectorsPage } from '../../pages/Collectors/CollectorsPage';
+import { CollectionsPage } from '../../pages/Collections/CollectionsPage';
+import { TeaPricesPage } from '../../pages/TeaPrices/TeaPricesPage';
+import { LoansDeductionsPage } from '../../pages/LoansDeductions/LoansDeductionsPage';
+import { SettlementsPage } from '../../pages/Settlements/SettlementsPage';
+import { ReportsPage } from '../../pages/Reports/ReportsPage';
+import { ActivityLogsPage } from '../../pages/ActivityLogs/ActivityLogsPage';
 import { useDashboard } from '../../hooks/useDashboard';
 import { RecordCollectionModal } from '../modals/RecordCollectionModal';
 import { AddFarmerModal } from '../modals/AddFarmerModal';
@@ -17,6 +23,19 @@ import { ReviewSlipModal } from '../modals/ReviewSlipModal';
 import { PrintSlipModal } from '../modals/PrintSlipModal';
 import { AuditModal } from '../modals/AuditModal';
 import { ToastContainer } from '../ui/ToastContainer';
+
+const PATH_TO_TAB: Record<string, string> = {
+  '/dashboard': 'dashboard',
+  '/farmers': 'farmers',
+  '/farmers/new': 'farmers',
+  '/collectors': 'collectors',
+  '/collections': 'collections',
+  '/tea-prices': 'tea-prices',
+  '/deductions': 'deductions',
+  '/settlements': 'settlements',
+  '/reports': 'reports',
+  '/audit-log': 'audit-log',
+};
 
 export const AppLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,20 +49,40 @@ export const AppLayout: React.FC = () => {
   } = useDashboard();
 
   useEffect(() => {
-    if (location.pathname === '/collectors' && activeTab !== 'collectors') {
-      setActiveTab('collectors');
-    } else if (
-      (location.pathname === '/farmers' || location.pathname === '/farmers/new') &&
-      activeTab !== 'farmers'
-    ) {
-      setActiveTab('farmers');
-    } else if (location.pathname === '/dashboard' && activeTab !== 'dashboard') {
-      setActiveTab('dashboard');
+    const matchedTab = PATH_TO_TAB[location.pathname];
+    if (matchedTab && activeTab !== matchedTab) {
+      setActiveTab(matchedTab);
     }
   }, [location.pathname, activeTab, setActiveTab]);
 
+  const renderMainContent = () => {
+    if (location.pathname === '/farmers/new') return <FarmerCreatePage />;
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardPage />;
+      case 'farmers':
+        return <FarmersPage />;
+      case 'collectors':
+        return <CollectorsPage />;
+      case 'collections':
+        return <CollectionsPage />;
+      case 'tea-prices':
+        return <TeaPricesPage />;
+      case 'deductions':
+        return <LoansDeductionsPage />;
+      case 'settlements':
+        return <SettlementsPage />;
+      case 'reports':
+        return <ReportsPage />;
+      case 'audit-log':
+        return <ActivityLogsPage />;
+      default:
+        return <DashboardPage />;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-surface-bg font-['Inter',sans-serif]">
+    <div className="flex min-h-screen bg-[#F4F6F3] font-['Inter',sans-serif]">
       {/* Sidebar Navigation */}
       <Sidebar
         mobileOpen={mobileMenuOpen}
@@ -58,15 +97,7 @@ export const AppLayout: React.FC = () => {
         </div>
 
         <main className="flex-1 w-full min-w-0 overflow-y-auto">
-          {activeTab === 'dashboard' ? (
-            <DashboardPage />
-          ) : location.pathname === '/farmers/new' ? (
-            <FarmerCreatePage />
-          ) : activeTab === 'farmers' ? (
-            <FarmersPage />
-          ) : (
-            <SecondaryView />
-          )}
+          {renderMainContent()}
         </main>
       </div>
 

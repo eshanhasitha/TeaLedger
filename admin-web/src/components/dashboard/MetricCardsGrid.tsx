@@ -7,63 +7,54 @@ interface MetricCardsGridProps {
 
 export const MetricCardsGrid: React.FC<MetricCardsGridProps> = ({ stats }) => {
   return (
-    <div className="self-stretch grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden">
-      {/* 1. Collected today */}
-      <div className="px-4 py-4 bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start gap-1.5 overflow-hidden shadow-xs hover:border-emerald-300 transition-colors">
-        <div className="self-stretch justify-start text-text-secondary text-xs font-medium font-['Inter']">
+    <div className="self-stretch grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="p-4 bg-white rounded-xl border border-[#DCE2DC] flex flex-col justify-start items-start gap-1.5">
+        <div className="text-[#56625B] text-xs font-medium">
           Collected today
         </div>
-        <div className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter']">
+        <div className="text-[#17201B] text-2xl sm:text-[28px] font-bold leading-tight">
           {stats.collectedTodayKg.toLocaleString()} kg
         </div>
-        <div className="self-stretch justify-start text-text-secondary text-xs font-normal font-['Inter']">
+        <div className="text-[#56625B] text-xs font-normal">
           Verified weight, {stats.verifiedSlipsCount} slips
         </div>
       </div>
 
-      {/* 2. Open requests */}
-      <div className="px-4 py-4 bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start gap-1.5 overflow-hidden shadow-xs hover:border-emerald-300 transition-colors">
-        <div className="self-stretch justify-start text-text-secondary text-xs font-medium font-['Inter']">
+      <div className="p-4 bg-white rounded-xl border border-[#DCE2DC] flex flex-col justify-start items-start gap-1.5">
+        <div className="text-[#56625B] text-xs font-medium">
           Open requests
         </div>
-        <div className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter']">
+        <div className="text-[#17201B] text-2xl sm:text-[28px] font-bold leading-tight">
           {stats.openRequestsCount}
         </div>
-        <div className="self-stretch justify-start text-text-secondary text-xs font-normal font-['Inter']">
+        <div className="text-[#56625B] text-xs font-normal">
           Tea-ready, awaiting collection
         </div>
       </div>
 
-      {/* 3. Active collectors */}
-      <div className="px-4 py-4 bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start gap-1.5 overflow-hidden shadow-xs hover:border-emerald-300 transition-colors">
-        <div className="self-stretch justify-start text-text-secondary text-xs font-medium font-['Inter']">
+      <div className="p-4 bg-white rounded-xl border border-[#DCE2DC] flex flex-col justify-start items-start gap-1.5">
+        <div className="text-[#56625B] text-xs font-medium">
           Active collectors
         </div>
-        <div className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter']">
+        <div className="text-[#17201B] text-2xl sm:text-[28px] font-bold leading-tight">
           {stats.activeCollectorsCount} / {stats.totalCollectorsCount}
         </div>
-        <div className="self-stretch justify-start text-text-secondary text-xs font-normal font-['Inter']">
+        <div className="text-[#56625B] text-xs font-normal">
           {stats.onLeaveCollectorsCount} on leave today
         </div>
       </div>
 
-      {/* 4. Monthly settlement */}
-      <div className="px-4 py-4 bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start gap-1.5 overflow-hidden shadow-xs hover:border-emerald-300 transition-colors">
-        <div className="self-stretch justify-start text-text-secondary text-xs font-medium font-['Inter']">
+      <div className="p-4 bg-white rounded-xl border border-[#DCE2DC] flex flex-col justify-start items-start gap-1.5">
+        <div className="text-[#56625B] text-xs font-medium">
           {stats.monthlySettlementMonth} settlement (LKR)
         </div>
-        <div className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter']">
+        <div className="text-[#17201B] text-2xl sm:text-[28px] font-bold leading-tight">
           {stats.monthlySettlementFormatted}
         </div>
         <div>
-          <div
-            data-status="info"
-            className="px-2.5 py-1 bg-status-info-bg rounded-[999px] inline-flex justify-start items-center"
-          >
-            <span className="justify-start text-status-info text-xs font-semibold font-['Inter']">
-              {stats.isSettlementEstimated ? '≈ Estimated' : '● Finalized'}
-            </span>
-          </div>
+          <span className="px-2.5 py-0.5 bg-[#EFF6FF] text-[#1D4ED8] rounded-full inline-flex items-center text-xs font-semibold">
+            {stats.isSettlementEstimated ? '≡ Estimated' : '✓ Finalized'}
+          </span>
         </div>
       </div>
     </div>
