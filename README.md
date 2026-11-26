@@ -48,14 +48,16 @@ Username: tea_ledger
 Password: tea_ledger@123
 ```
 
-### 2. Run the API
+### 2. Configure the development admin and run the API
 
-Open a terminal in `backend/TeaLedger.API`:
+Copy `backend/TeaLedger.API/.env.example` to `backend/TeaLedger.API/.env` and set a private phone number and strong password. The `.env` file is ignored by Git. Then open a terminal in `backend/TeaLedger.API` and run:
 
 ```bash
 dotnet restore
 dotnet run --launch-profile http
 ```
+
+The development seeder creates an admin account only when no admin exists. Keep the `.env` file private and rotate the password after the first sign-in if the app supports password changes. For deployment, configure secrets through the hosting platform rather than uploading a `.env` file.
 
 The API is available at `http://localhost:5252`. In development, Swagger is available at `http://localhost:5252/swagger` and the health endpoint is available at `http://localhost:5252/api/health`.
 
@@ -145,7 +147,8 @@ dotnet ef database update --project backend/TeaLedger.API
 
 - `VITE_API_URL` controls the admin web API base URL.
 - The API connection string is configured through `ConnectionStrings:DefaultConnection`.
-- The checked-in appsettings file contains development-only credentials and a JWT key. Replace these values with environment variables or user secrets before using the application outside local development.
+- The checked-in development appsettings file contains a local database password and JWT key. Replace these values with environment variables or User Secrets before using the application outside local development.
+- The bootstrap admin phone and password are read from `AdminUser__PhoneNumber` and `AdminUser__Password`; provide them through the ignored local `.env` file or secure environment configuration in deployment. Never put them in appsettings files or source control.
 - Do not commit production connection strings, JWT keys, Firebase configuration, or other credentials.
 
 ## Development Checks

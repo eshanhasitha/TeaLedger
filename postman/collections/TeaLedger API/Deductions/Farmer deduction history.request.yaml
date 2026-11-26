@@ -1,0 +1,7 @@
+$kind: http-request
+name: Farmer deduction history
+url: "{{baseUrl}}/api/deductions/farmer?category={{deductionCategory}}&from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: inherit
+order: 3000

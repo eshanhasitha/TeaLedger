@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get collector loan
+url: "{{baseUrl}}/api/loans/collector/{{loanId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 4000

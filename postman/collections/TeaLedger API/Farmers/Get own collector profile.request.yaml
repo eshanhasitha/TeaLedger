@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get own collector profile
+url: "{{baseUrl}}/api/collector/profile"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 6100

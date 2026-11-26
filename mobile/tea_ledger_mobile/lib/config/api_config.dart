@@ -1,7 +1,13 @@
 class ApiConfig {
-  static const String baseUrl = 'https://YOUR_API_URL/api';
-}
+  ApiConfig._();
 
-/*durigng local development
-static const String baseUrl =
-    'https://10.0.2.2:YOUR_PORT/api';*/
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue:
+        'https://tealedger-api.orangebush-4c18625b.indonesiacentral.azurecontainerapps.io',
+  );
+
+  static const Duration connectTimeout = Duration(seconds: 20);
+  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration sendTimeout = Duration(seconds: 20);
+}

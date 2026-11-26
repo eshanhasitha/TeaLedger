@@ -1,0 +1,10 @@
+$kind: http-request
+name: Collector list assigned farmers settlements
+description: Requires a Collector JWT from Authentication / Collector login.
+url: "{{baseUrl}}/api/settlements/collector"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 6000

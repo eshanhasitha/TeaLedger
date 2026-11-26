@@ -1,0 +1,9 @@
+$kind: http-request
+name: Collector dashboard access check
+url: "{{baseUrl}}/api/collector/dashboard"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 4000

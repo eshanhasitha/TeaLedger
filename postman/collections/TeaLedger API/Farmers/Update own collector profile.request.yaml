@@ -1,0 +1,20 @@
+$kind: http-request
+name: Update own collector profile
+url: "{{baseUrl}}/api/collector/profile"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "{{fullName}}",
+      "phoneNumber": "{{collectorPhoneNumber}}",
+      "address": "{{address}}",
+      "area": "{{area}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 6200

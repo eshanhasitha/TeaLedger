@@ -1,0 +1,20 @@
+$kind: http-request
+name: Admin updates collector
+url: "{{baseUrl}}/api/admin/collectors/{{collectorId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "{{fullName}}",
+      "phoneNumber": "{{collectorPhoneNumber}}",
+      "address": "{{address}}",
+      "area": "{{area}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 4000

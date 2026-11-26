@@ -1,0 +1,17 @@
+$kind: http-request
+name: Collector updates farmer status
+url: "{{baseUrl}}/api/collector/farmers/{{farmerId}}/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "isActive": {{activeStatus}}
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 5000

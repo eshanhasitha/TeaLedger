@@ -1,0 +1,9 @@
+$kind: http-request
+name: Admin gets collector tea price history
+url: "{{baseUrl}}/api/tea-prices/admin/collectors/{{collectorId}}/history"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 5000

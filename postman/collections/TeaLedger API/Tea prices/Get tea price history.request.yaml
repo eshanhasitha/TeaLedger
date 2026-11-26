@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get tea price history
+url: "{{baseUrl}}/api/tea-prices/history"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 2000
