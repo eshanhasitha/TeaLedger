@@ -5,6 +5,15 @@ import { Navbar } from '../navbar/Navbar';
 import { DashboardPage } from '../../pages/Dashboard/DashboardPage';
 import { FarmersPage } from '../../pages/Farmers/FarmersPage';
 import { FarmerCreatePage } from '../../pages/Farmers/FarmerCreatePage';
+import { CollectorsPage } from '../../pages/Collectors/CollectorsPage';
+import { CollectionsPage } from '../../pages/Collections/CollectionsPage';
+import { TeaPricesPage } from '../../pages/TeaPrices/TeaPricesPage';
+import { LoansAndDeductionsPage } from '../../pages/Loans/LoansAndDeductionsPage';
+import { LoanCreatePage } from '../../pages/Loans/LoanCreatePage';
+import { DeductionCreatePage } from '../../pages/Loans/DeductionCreatePage';
+import { SettlementsPage } from '../../pages/Settlements/SettlementsPage';
+import { ReportsPage } from '../../pages/Reports/ReportsPage';
+import { ActivityLogsPage } from '../../pages/ActivityLogs/ActivityLogsPage';
 import { SecondaryView } from '../../pages/SecondaryView';
 import { useDashboard } from '../../hooks/useDashboard';
 import { RecordCollectionModal } from '../modals/RecordCollectionModal';
@@ -32,11 +41,28 @@ export const AppLayout: React.FC = () => {
   useEffect(() => {
     if (location.pathname === '/collectors' && activeTab !== 'collectors') {
       setActiveTab('collectors');
+    } else if (location.pathname === '/collections' && activeTab !== 'collections') {
+      setActiveTab('collections');
+    } else if (location.pathname === '/tea-prices' && activeTab !== 'tea-prices') {
+      setActiveTab('tea-prices');
+    } else if (
+      (location.pathname === '/deductions' ||
+        location.pathname === '/deductions/loans/new' ||
+        location.pathname === '/deductions/new') &&
+      activeTab !== 'deductions'
+    ) {
+      setActiveTab('deductions');
     } else if (
       (location.pathname === '/farmers' || location.pathname === '/farmers/new') &&
       activeTab !== 'farmers'
     ) {
       setActiveTab('farmers');
+    } else if (location.pathname === '/settlements' && activeTab !== 'settlements') {
+      setActiveTab('settlements');
+    } else if (location.pathname === '/reports' && activeTab !== 'reports') {
+      setActiveTab('reports');
+    } else if (location.pathname === '/audit-log' && activeTab !== 'audit-log') {
+      setActiveTab('audit-log');
     } else if (location.pathname === '/dashboard' && activeTab !== 'dashboard') {
       setActiveTab('dashboard');
     }
@@ -64,6 +90,24 @@ export const AppLayout: React.FC = () => {
             <FarmerCreatePage />
           ) : activeTab === 'farmers' ? (
             <FarmersPage />
+          ) : activeTab === 'collectors' ? (
+            <CollectorsPage />
+          ) : activeTab === 'collections' ? (
+            <CollectionsPage />
+          ) : activeTab === 'tea-prices' ? (
+            <TeaPricesPage />
+          ) : location.pathname === '/deductions/loans/new' ? (
+            <LoanCreatePage />
+          ) : location.pathname === '/deductions/new' ? (
+            <DeductionCreatePage />
+          ) : activeTab === 'deductions' ? (
+            <LoansAndDeductionsPage />
+          ) : activeTab === 'settlements' ? (
+            <SettlementsPage />
+          ) : activeTab === 'reports' ? (
+            <ReportsPage />
+          ) : activeTab === 'audit-log' ? (
+            <ActivityLogsPage />
           ) : (
             <SecondaryView />
           )}

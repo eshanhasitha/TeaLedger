@@ -49,7 +49,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
 
   const handleSelect = (item: NavItem) => {
     setActiveTab(item.id);
-    if (item.path === '/dashboard' || item.path === '/collectors' || item.path === '/farmers') {
+    if (
+      item.path === '/dashboard' ||
+      item.path === '/collectors' ||
+      item.path === '/collections' ||
+      item.path === '/tea-prices' ||
+      item.path === '/deductions' ||
+      item.path === '/settlements' ||
+      item.path === '/reports' ||
+      item.path === '/audit-log' ||
+      item.path === '/farmers'
+    ) {
       navigate(item.path);
     }
     if (onCloseMobile) {
