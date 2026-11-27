@@ -224,13 +224,7 @@ class FarmerDashboardScreen extends ConsumerWidget {
             height: 48,
             child: ElevatedButton.icon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Tea Ready request screen is planned for Day 8.',
-                    ),
-                  ),
-                );
+                context.go('/farmer/tea-ready');
               },
               icon: const Icon(Icons.eco_outlined, size: 19),
               label: const Text(
