@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/farmers?page=1&pageSize=10"
+method: GET
+auth:
+  type: inherit
+order: 1500

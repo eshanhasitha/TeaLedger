@@ -1,0 +1,7 @@
+$kind: http-request
+name: Export earnings CSV
+url: "{{baseUrl}}/api/reports/earnings/export?from={{fromDate}}&to={{toDate}}&farmerId={{farmerId}}"
+method: GET
+auth:
+  type: inherit
+order: 5000

@@ -1,0 +1,9 @@
+$kind: http-request
+name: Collector gets assigned farmer
+url: "{{baseUrl}}/api/collector/farmers/{{farmerId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 2000

@@ -1,0 +1,15 @@
+$kind: http-request
+name: Mark notification as read
+url: "{{baseUrl}}/api/notifications/{{notificationId}}/read"
+method: PATCH
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Notification marked as read", function () {
+          pm.response.to.have.status(204);
+      });
+order: 3000

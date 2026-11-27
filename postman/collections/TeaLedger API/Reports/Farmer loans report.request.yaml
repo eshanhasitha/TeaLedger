@@ -1,0 +1,7 @@
+$kind: http-request
+name: Farmer loans report
+url: "{{baseUrl}}/api/reports/farmer/loans"
+method: GET
+auth:
+  type: inherit
+order: 10000

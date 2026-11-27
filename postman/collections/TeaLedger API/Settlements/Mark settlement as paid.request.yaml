@@ -1,0 +1,10 @@
+$kind: http-request
+name: Mark settlement as paid
+description: Requires an Admin JWT from Authentication / Admin login. Uses settlementId, set by Create monthly settlement or manually.
+url: "{{baseUrl}}/api/settlements/{{settlementId}}/pay"
+method: POST
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 3000

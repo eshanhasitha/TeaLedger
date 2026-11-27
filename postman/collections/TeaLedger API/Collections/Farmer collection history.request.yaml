@@ -1,0 +1,9 @@
+$kind: http-request
+name: Farmer views collection history
+url: "{{baseUrl}}/api/collections/my-history?from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{farmerAccessToken}}"
+order: 3000

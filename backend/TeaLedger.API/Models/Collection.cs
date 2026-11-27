@@ -12,6 +12,8 @@ public class Collection
 {
     public Guid Id { get; set; }
 
+    public Guid RequestId { get; set; }
+
     public Guid FarmerId { get; set; }
 
     public Guid? CollectorId { get; set; }
@@ -39,4 +41,10 @@ public class Collection
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public Farmer Farmer { get; set; } = null!;
+
+    public CollectionRequest Request { get; set; } = null!;
+
+    public WeightVerification? WeightVerification { get; set; }
+
+    public PassbookEntry? PassbookEntry { get; set; }
 }

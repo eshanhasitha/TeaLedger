@@ -1,0 +1,9 @@
+$kind: http-request
+name: Admin lists collectors
+url: "{{baseUrl}}/api/admin/collectors?page={{page}}&pageSize={{pageSize}}&search={{search}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{adminAccessToken}}"
+order: 1000

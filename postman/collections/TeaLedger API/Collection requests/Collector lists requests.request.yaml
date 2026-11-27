@@ -1,0 +1,9 @@
+$kind: http-request
+name: Collector lists collection requests
+url: "{{baseUrl}}/api/collection-requests/collector"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+order: 3000

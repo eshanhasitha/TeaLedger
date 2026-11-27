@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/earnings/collector/summary?from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: inherit
+order: 5000

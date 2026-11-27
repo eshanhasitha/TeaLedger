@@ -1,0 +1,7 @@
+$kind: http-request
+name: Admin deduction history
+url: "{{baseUrl}}/api/deductions/admin?farmerId={{farmerId}}&collectorId={{collectorId}}&category={{deductionCategory}}&from={{fromDate}}&to={{toDate}}"
+method: GET
+auth:
+  type: inherit
+order: 4000

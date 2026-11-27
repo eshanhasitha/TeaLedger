@@ -1,0 +1,23 @@
+$kind: http-request
+name: Collector records collection
+url: "{{baseUrl}}/api/collections"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "requestId": "{{collectionRequestId}}"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{collectorAccessToken}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Collection recorded", function () {
+          pm.response.to.have.status(200);
+      });
+order: 7000
