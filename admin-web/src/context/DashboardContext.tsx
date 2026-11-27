@@ -14,10 +14,10 @@ import {
   INITIAL_SLIPS,
   INITIAL_REQUESTS,
   INITIAL_FARMERS,
-  INITIAL_COLLECTORS,
   SETTLEMENT_SUMMARY,
   WEIGHBRIDGE_STATUS,
 } from '../services/mockData';
+import { collectorService, INITIAL_FIGMA_COLLECTORS } from '../services/collectorService';
 
 export const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
@@ -28,7 +28,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [slips, setSlips] = useState<IntakeSlip[]>(INITIAL_SLIPS);
   const [requests, setRequests] = useState<UrgentCollectionRequest[]>(INITIAL_REQUESTS);
   const [farmers, setFarmers] = useState<Farmer[]>(INITIAL_FARMERS);
-  const [collectors, setCollectors] = useState<TeaCollector[]>(INITIAL_COLLECTORS);
+  const [collectors, setCollectors] = useState<TeaCollector[]>(INITIAL_FIGMA_COLLECTORS);
   const [settlement] = useState<SettlementSummary>(SETTLEMENT_SUMMARY);
   const [stationStatus] = useState<WeighbridgeStationStatus>(WEIGHBRIDGE_STATUS);
   const [isScaleSyncing, setIsScaleSyncing] = useState<boolean>(false);
@@ -138,42 +138,48 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addCollector = (collectorData: CollectorFormData) => {
-    const nextNumber = 400 + collectors.length + 1;
-    const newCollector: TeaCollector = {
-      id: `COL-${nextNumber}`,
-      ...collectorData,
-      activeFarmersCount: 0,
-      todayIntakeKg: 0,
-      registeredDate: new Date().toISOString().split('T')[0],
-      batteryLevel: 100,
-      scaleStatus: collectorData.status === 'Active' ? 'Online' : 'Offline',
-    };
-
-    setCollectors((prev) => [newCollector, ...prev]);
-    addToast({
-      type: 'success',
-      title: 'Collector Registered',
-      message: `Collector ${newCollector.fullName} (${newCollector.id}) registered successfully.`,
-    });
+    void collectorService
+      .createCollector(collectorData)
+      .then((newCollector) => {
+        setCollectors((prev) => [newCollector, ...prev]);
+        addToast({
+          type: 'success',
+          title: 'Collector Registered',
+          message: `Collector ${newCollector.fullName} (${newCollector.collectorCode || newCollector.id}) registered successfully.`,
+        });
+      })
+      .catch((err: unknown) => {
+        addToast({
+          type: 'error',
+          title: 'Registration Failed',
+          message: err instanceof Error ? err.message : 'Unable to register collector.',
+        });
+      });
   };
 
   const updateCollectorStatus = (id: string, newStatus: CollectorStatus) => {
-    setCollectors((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              status: newStatus,
-              scaleStatus: newStatus === 'Active' ? 'Online' : 'Offline',
-            }
-          : c
-      )
-    );
-    addToast({
-      type: 'info',
-      title: 'Collector Status Updated',
-      message: `Collector ${id} status set to ${newStatus}.`,
-    });
+    void collectorService
+      .updateCollectorStatus(id, newStatus)
+      .then((updated) => {
+        setCollectors((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, ...updated, status: newStatus } : c))
+        );
+        setSelectedCollectorForDetail((prev) =>
+          prev && prev.id === id ? { ...prev, ...updated, status: newStatus } : prev
+        );
+        addToast({
+          type: 'info',
+          title: 'Collector Status Updated',
+          message: `Collector ${id} status set to ${newStatus}.`,
+        });
+      })
+      .catch((err: unknown) => {
+        addToast({
+          type: 'error',
+          title: 'Update Failed',
+          message: err instanceof Error ? err.message : `Unable to update status for ${id}.`,
+        });
+      });
   };
 
   const assignCollectorToRequest = (requestId: string, collector: string) => {
