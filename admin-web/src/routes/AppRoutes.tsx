@@ -17,6 +17,8 @@ export const AppRoutes = () => {
       {/* Protected Estate Admin Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<AppLayout />} />
+        <Route path="/farmers" element={<AppLayout />} />
+        <Route path="/farmers/new" element={<AppLayout />} />
         <Route path="/collectors" element={<AppLayout />} />
         <Route path="/collections" element={<AppLayout />} />
         <Route path="/tea-prices" element={<AppLayout />} />
@@ -26,8 +28,6 @@ export const AppRoutes = () => {
         <Route path="/settlements" element={<AppLayout />} />
         <Route path="/reports" element={<AppLayout />} />
         <Route path="/audit-log" element={<AppLayout />} />
-        <Route path="/farmers" element={<AppLayout />} />
-        <Route path="/farmers/new" element={<AppLayout />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>
 
@@ -36,4 +36,3 @@ export const AppRoutes = () => {
     </Routes>
   );
 };
-

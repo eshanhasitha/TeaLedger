@@ -1,32 +1,42 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface-bg: #f7f5f0;
-  --color-surface-card: #ffffff;
-  --color-surface-muted: #f8fafc;
-  --color-border-default: #e2e8f0;
-  --color-brand-primary: #15803d;
-  --color-brand-primary-hover: #166534;
-  --color-brand-tint: #ecfdf5;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-text-on-primary: #ffffff;
-  --color-status-success-bg: #ecfdf5;
-  --color-status-success: #047857;
-  --color-status-warning-bg: #fffbeb;
-  --color-status-warning: #b45309;
-  --color-status-info-bg: #eff6ff;
-  --color-status-info: #1d4ed8;
-  --color-status-danger-bg: #fef2f2;
-  --color-status-danger: #b91c1c;
-  --color-status-neutral-bg: #f1f5f9;
-  --color-status-neutral: #64748b;
+  --color-surface-bg: #F4F6F3;
+  --color-surface-card: #FFFFFF;
+  --color-surface-muted: #F4F6F3;
+  --color-border-default: #DCE2DC;
+  --color-border-subtle: #eef2ee;
+  --color-brand-primary: #0B5D3B;
+  --color-brand-primary-hover: #08472D;
+  --color-brand-tint: #E1F4E8;
+  --color-sidebar-bg: #073B26;
+  --color-logo-badge-bg: #E1F4E8;
+  --color-text-primary: #17201B;
+  --color-text-secondary: #56625B;
+  --color-text-muted: #64748b;
+  --color-text-tertiary: #94a3b8;
+  --color-text-on-primary: #FFFFFF;
+  --color-status-success-bg: #E1F4E8;
+  --color-status-success: #0B5D3B;
+  --color-status-success-text: #0B5D3B;
+  --color-status-warning-bg: #FEF3C7;
+  --color-status-warning: #B45309;
+  --color-status-warning-text: #B45309;
+  --color-status-info-bg: #EFF6FF;
+  --color-status-info: #1D4ED8;
+  --color-status-danger-bg: #FEF2F2;
+  --color-status-danger: #B91C1C;
+  --color-status-error-bg: #FEF2F2;
+  --color-status-error-text: #B91C1C;
+  --color-status-neutral-bg: #F1F5F9;
+  --color-status-neutral: #56625B;
 }
 
 body {
   font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f7f5f0;
-  color: #0f172a;
+  background-color: #F4F6F3;
+  color: #17201B;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

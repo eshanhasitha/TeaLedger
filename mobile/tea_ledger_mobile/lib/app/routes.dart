@@ -9,6 +9,7 @@ import '../features/farmer/dashboard/farmer_dashboard_screen.dart';
 import '../features/collector/dashboard/collector_dashboard_screen.dart';
 import '../shared/widgets/app_loading.dart';
 import '../shared/widgets/dashboard_section_placeholder.dart';
+import '../features/farmer/tea_ready/tea_ready_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
@@ -48,6 +49,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/farmer',
         builder: (context, state) => const FarmerDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/farmer/tea-ready',
+        builder: (context, state) => const TeaReadyScreen(),
       ),
       GoRoute(
         path: '/farmer/passbook',

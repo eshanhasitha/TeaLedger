@@ -14,7 +14,6 @@ import { DeductionCreatePage } from '../../pages/Loans/DeductionCreatePage';
 import { SettlementsPage } from '../../pages/Settlements/SettlementsPage';
 import { ReportsPage } from '../../pages/Reports/ReportsPage';
 import { ActivityLogsPage } from '../../pages/ActivityLogs/ActivityLogsPage';
-import { SecondaryView } from '../../pages/SecondaryView';
 import { useDashboard } from '../../hooks/useDashboard';
 import { RecordCollectionModal } from '../modals/RecordCollectionModal';
 import { AddFarmerModal } from '../modals/AddFarmerModal';
@@ -26,6 +25,21 @@ import { ReviewSlipModal } from '../modals/ReviewSlipModal';
 import { PrintSlipModal } from '../modals/PrintSlipModal';
 import { AuditModal } from '../modals/AuditModal';
 import { ToastContainer } from '../ui/ToastContainer';
+
+const PATH_TO_TAB: Record<string, string> = {
+  '/dashboard': 'dashboard',
+  '/farmers': 'farmers',
+  '/farmers/new': 'farmers',
+  '/collectors': 'collectors',
+  '/collections': 'collections',
+  '/tea-prices': 'tea-prices',
+  '/deductions': 'deductions',
+  '/deductions/loans/new': 'deductions',
+  '/deductions/new': 'deductions',
+  '/settlements': 'settlements',
+  '/reports': 'reports',
+  '/audit-log': 'audit-log',
+};
 
 export const AppLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -39,37 +53,42 @@ export const AppLayout: React.FC = () => {
   } = useDashboard();
 
   useEffect(() => {
-    if (location.pathname === '/collectors' && activeTab !== 'collectors') {
-      setActiveTab('collectors');
-    } else if (location.pathname === '/collections' && activeTab !== 'collections') {
-      setActiveTab('collections');
-    } else if (location.pathname === '/tea-prices' && activeTab !== 'tea-prices') {
-      setActiveTab('tea-prices');
-    } else if (
-      (location.pathname === '/deductions' ||
-        location.pathname === '/deductions/loans/new' ||
-        location.pathname === '/deductions/new') &&
-      activeTab !== 'deductions'
-    ) {
-      setActiveTab('deductions');
-    } else if (
-      (location.pathname === '/farmers' || location.pathname === '/farmers/new') &&
-      activeTab !== 'farmers'
-    ) {
-      setActiveTab('farmers');
-    } else if (location.pathname === '/settlements' && activeTab !== 'settlements') {
-      setActiveTab('settlements');
-    } else if (location.pathname === '/reports' && activeTab !== 'reports') {
-      setActiveTab('reports');
-    } else if (location.pathname === '/audit-log' && activeTab !== 'audit-log') {
-      setActiveTab('audit-log');
-    } else if (location.pathname === '/dashboard' && activeTab !== 'dashboard') {
-      setActiveTab('dashboard');
+    const matchedTab = PATH_TO_TAB[location.pathname];
+    if (matchedTab && activeTab !== matchedTab) {
+      setActiveTab(matchedTab);
     }
   }, [location.pathname, activeTab, setActiveTab]);
 
+  const renderMainContent = () => {
+    if (location.pathname === '/farmers/new') return <FarmerCreatePage />;
+    if (location.pathname === '/deductions/loans/new') return <LoanCreatePage />;
+    if (location.pathname === '/deductions/new') return <DeductionCreatePage />;
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardPage />;
+      case 'farmers':
+        return <FarmersPage />;
+      case 'collectors':
+        return <CollectorsPage />;
+      case 'collections':
+        return <CollectionsPage />;
+      case 'tea-prices':
+        return <TeaPricesPage />;
+      case 'deductions':
+        return <LoansAndDeductionsPage />;
+      case 'settlements':
+        return <SettlementsPage />;
+      case 'reports':
+        return <ReportsPage />;
+      case 'audit-log':
+        return <ActivityLogsPage />;
+      default:
+        return <DashboardPage />;
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-surface-bg font-['Inter',sans-serif]">
+    <div className="flex min-h-screen bg-[#F4F6F3] font-['Inter',sans-serif]">
       {/* Sidebar Navigation */}
       <Sidebar
         mobileOpen={mobileMenuOpen}
@@ -84,33 +103,7 @@ export const AppLayout: React.FC = () => {
         </div>
 
         <main className="flex-1 w-full min-w-0 overflow-y-auto">
-          {activeTab === 'dashboard' ? (
-            <DashboardPage />
-          ) : location.pathname === '/farmers/new' ? (
-            <FarmerCreatePage />
-          ) : activeTab === 'farmers' ? (
-            <FarmersPage />
-          ) : activeTab === 'collectors' ? (
-            <CollectorsPage />
-          ) : activeTab === 'collections' ? (
-            <CollectionsPage />
-          ) : activeTab === 'tea-prices' ? (
-            <TeaPricesPage />
-          ) : location.pathname === '/deductions/loans/new' ? (
-            <LoanCreatePage />
-          ) : location.pathname === '/deductions/new' ? (
-            <DeductionCreatePage />
-          ) : activeTab === 'deductions' ? (
-            <LoansAndDeductionsPage />
-          ) : activeTab === 'settlements' ? (
-            <SettlementsPage />
-          ) : activeTab === 'reports' ? (
-            <ReportsPage />
-          ) : activeTab === 'audit-log' ? (
-            <ActivityLogsPage />
-          ) : (
-            <SecondaryView />
-          )}
+          {renderMainContent()}
         </main>
       </div>
 
