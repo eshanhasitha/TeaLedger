@@ -1,322 +1,486 @@
-import { Check, Download, Flag, Plus, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { PourBreakdown } from '../../components/charts/PourBreakdown'
-import { CollectionForm } from '../../components/forms/CollectionForm'
-import { PageHeader } from '../../components/layout/PageHeader'
-import { DataTable, type Column } from '../../components/tables/DataTable'
-import { TableFilters } from '../../components/tables/TableFilters'
-import { TableSearch } from '../../components/tables/TableSearch'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState } from '../../components/ui/EmptyState'
-import { Modal } from '../../components/ui/Modal'
-import { useDebounce } from '../../hooks/useDebounce'
-import { useLedger } from '../../hooks/useLedger'
-import { useNotifications } from '../../hooks/useNotifications'
-import type { Collection, CollectionStatus } from '../../types/ledger.types'
-import { exportToCsv } from '../../utils/exportToCsv'
-import { formatCurrency } from '../../utils/formatCurrency'
-import { formatDate, formatDateShort, formatTime, toISODate } from '../../utils/formatDate'
-import { formatKg, formatNumber } from '../../utils/formatNumber'
+import React, { useState, useEffect } from 'react';
+import { Search, AlertCircle, RefreshCw, X, Loader2 } from 'lucide-react';
+import { useDashboard } from '../../hooks/useDashboard';
+import { collectionService, INITIAL_COLLECTIONS } from '../../services/collectionService';
+import type { TeaCollectionRecord, CollectionRecordStatus } from '../../types/collection.types';
 
-type StatusFilter = 'all' | CollectionStatus
+export const CollectionsPage: React.FC = () => {
+  const { addToast } = useDashboard();
 
-export default function CollectionsPage() {
-  const L = useLedger()
-  const { notify } = useNotifications()
-  const [params, setParams] = useSearchParams()
-  const [q, setQ] = useState(params.get('q') ?? '')
-  const status = (params.get('status') as StatusFilter) || 'all'
-  const [route, setRoute] = useState('')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [open, setOpen] = useState<Collection | null>(null)
-  const [adding, setAdding] = useState(false)
-  const [voiding, setVoiding] = useState<Collection | null>(null)
-  const dq = useDebounce(q.trim().toLowerCase())
+  const [collections, setCollections] = useState<TeaCollectionRecord[]>(INITIAL_COLLECTIONS);
+  const [totalCount, setTotalCount] = useState<number>(184);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<CollectionRecordStatus | 'All'>('All');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [selectedReviewId, setSelectedReviewId] = useState<string>('L-4815');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // keep the search box in step when quick-find navigates here with a new ?q=
-  const urlQ = params.get('q') ?? ''
-  const [lastUrlQ, setLastUrlQ] = useState(urlQ)
-  if (urlQ !== lastUrlQ) {
-    setLastUrlQ(urlQ)
-    setQ(urlQ)
-  }
+  const pageSize = 5;
 
-  const setStatus = (s: StatusFilter) => {
-    const p = new URLSearchParams(params)
-    if (s === 'all') p.delete('status')
-    else p.set('status', s)
-    setParams(p, { replace: true })
-    setSelected(new Set())
-  }
+  const fetchCollections = (
+    search: string,
+    status: CollectionRecordStatus | 'All',
+    page: number
+  ) => {
+    setIsLoading(true);
+    setErrorMessage(null);
 
-  const base = useMemo(
-    () =>
-      L.collections.filter((c) => {
-        const day = toISODate(new Date(c.collectedAt))
-        if (route && c.collectorId !== route) return false
-        if (from && day < from) return false
-        if (to && day > to) return false
-        if (dq) {
-          const f = L.farmerById.get(c.farmerId)
-          if (!c.ref.toLowerCase().includes(dq) && !f?.name.toLowerCase().includes(dq) && !f?.code.toLowerCase().includes(dq)) return false
+    collectionService
+      .getCollections({ search, status, page, pageSize })
+      .then((res) => {
+        setCollections(res.items);
+        setTotalCount(res.totalCount);
+        setIsLoading(false);
+      })
+      .catch((err: unknown) => {
+        const msg =
+          err instanceof Error ? err.message : 'Failed to load collections from backend.';
+        setErrorMessage(msg);
+        setCollections(INITIAL_COLLECTIONS);
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    let ignore = false;
+
+    collectionService
+      .getCollections({ search: searchQuery, status: statusFilter, page: currentPage, pageSize })
+      .then((res) => {
+        if (!ignore) {
+          setCollections(res.items);
+          setTotalCount(res.totalCount);
         }
-        return true
-      }),
-    [L.collections, L.farmerById, route, from, to, dq],
-  )
-  const rows = useMemo(() => (status === 'all' ? base : base.filter((c) => c.status === status)), [base, status])
-  const count = (s: CollectionStatus) => base.filter((c) => c.status === s).length
-  const totals = rows.reduce((a, c) => ({ kg: a.kg + c.final, amt: a.amt + c.amount }), { kg: 0, amt: 0 })
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          const msg =
+            err instanceof Error ? err.message : 'Failed to load collections from backend.';
+          setErrorMessage(msg);
+          setCollections(INITIAL_COLLECTIONS);
+        }
+      });
 
-  const columns: Column<Collection>[] = [
-    {
-      key: 'date',
-      header: 'Date',
-      sort: (c) => c.collectedAt,
-      render: (c) => (
-        <span className="figure whitespace-nowrap text-[12.5px]">
-          {formatDateShort(c.collectedAt)} <span className="text-[var(--ink-3)]">{formatTime(c.collectedAt)}</span>
-        </span>
-      ),
-    },
-    { key: 'ref', header: 'Ref', sort: (c) => c.ref, render: (c) => <span className="figure whitespace-nowrap text-[12.5px] text-[var(--ink-2)]">{c.ref}</span> },
-    {
-      key: 'farmer',
-      header: 'Farmer',
-      sort: (c) => L.farmerById.get(c.farmerId)?.name ?? '',
-      render: (c) => {
-        const f = L.farmerById.get(c.farmerId)
+    return () => {
+      ignore = true;
+    };
+  }, [searchQuery, statusFilter, currentPage]);
+
+  const handleExportCSV = async () => {
+    try {
+      await collectionService.exportCollectionsCSV(collections);
+      addToast({
+        type: 'success',
+        title: 'Collections Exported',
+        message: 'Collections summary CSV has been downloaded.',
+      });
+    } catch {
+      addToast({
+        type: 'error',
+        title: 'Export Failed',
+        message: 'Unable to export collections CSV right now.',
+      });
+    }
+  };
+
+  const activeReviewSlip =
+    collections.find((c) => c.id === selectedReviewId && c.status === 'Needs review') ||
+    collections.find((c) => c.status === 'Needs review') ||
+    null;
+
+  const handleAcceptServerWeight = async (slip: TeaCollectionRecord) => {
+    setIsActionLoading(true);
+    try {
+      const updated = await collectionService.acceptServerWeight(slip);
+      setCollections((prev) => prev.map((c) => (c.id === slip.id ? updated : c)));
+      addToast({
+        type: 'success',
+        title: `Slip ${slip.slipId} Verified`,
+        message: `Server-verified final weight (${updated.finalKg.toFixed(2)} kg) accepted.`,
+      });
+    } catch {
+      addToast({
+        type: 'error',
+        title: 'Verification Failed',
+        message: `Could not verify weight for slip ${slip.slipId}.`,
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleRequestRecheck = async (slip: TeaCollectionRecord) => {
+    setIsActionLoading(true);
+    try {
+      const updated = await collectionService.requestRecheck(slip);
+      setCollections((prev) => prev.map((c) => (c.id === slip.id ? updated : c)));
+      addToast({
+        type: 'info',
+        title: `Recheck Requested (${slip.slipId})`,
+        message: `${slip.collectorName} has been notified to recheck bag weights.`,
+      });
+    } catch {
+      addToast({
+        type: 'error',
+        title: 'Request Failed',
+        message: `Could not send recheck request for slip ${slip.slipId}.`,
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const renderStatusBadge = (status: CollectionRecordStatus) => {
+    switch (status) {
+      case 'Verified':
         return (
-          <span>
-            <span className="block text-[13.5px]">{f?.name ?? 'Removed farmer'}</span>
-            <span className="block text-[11.5px] text-[var(--ink-3)]">{L.collectorById.get(c.collectorId)?.area}</span>
-          </span>
-        )
-      },
-    },
-    { key: 'gross', header: 'Gross', align: 'right', sort: (c) => c.gross, render: (c) => <span className="figure text-[var(--ink-3)]">{formatNumber(c.gross, 1)}</span> },
-    { key: 'final', header: 'Payable kg', align: 'right', sort: (c) => c.final, render: (c) => <span className="figure">{formatNumber(c.final, 1)}</span> },
-    { key: 'amount', header: 'Amount', align: 'right', sort: (c) => c.amount, render: (c) => <span className="figure">{formatCurrency(c.amount)}</span> },
-    { key: 'status', header: 'Status', sort: (c) => c.status, render: (c) => <Badge status={c.status} /> },
-  ]
+          <div
+            data-status="success"
+            className="px-2.5 py-1 bg-status-success-bg rounded-[999px] inline-flex justify-start items-center"
+          >
+            <span className="justify-start text-status-success text-xs font-semibold font-['Inter']">
+              ✓ Verified
+            </span>
+          </div>
+        );
+      case 'Pending sync':
+        return (
+          <div
+            data-status="warning"
+            className="px-2.5 py-1 bg-status-warning-bg rounded-[999px] inline-flex justify-start items-center"
+          >
+            <span className="justify-start text-status-warning text-xs font-semibold font-['Inter']">
+              ◔ Pending sync
+            </span>
+          </div>
+        );
+      case 'Needs review':
+      default:
+        return (
+          <div
+            data-status="danger"
+            className="px-2.5 py-1 bg-status-danger-bg rounded-[999px] inline-flex justify-start items-center"
+          >
+            <span className="justify-start text-status-danger text-xs font-semibold font-['Inter']">
+              ! Needs review
+            </span>
+          </div>
+        );
+    }
+  };
 
-  const bulk = (s: CollectionStatus) => {
-    const ids = [...selected].filter((id) => L.collections.find((c) => c.id === id)?.status !== 'Settled')
-    if (!ids.length) return notify('Settled lines are locked and were skipped', 'info')
-    L.setCollectionStatus(ids, s)
-    setSelected(new Set())
-    notify(`${ids.length} ${ids.length === 1 ? 'line' : 'lines'} marked ${s.toLowerCase()}`)
-  }
-
-  const setOne = (c: Collection, s: CollectionStatus) => {
-    L.setCollectionStatus([c.id], s)
-    setOpen({ ...c, status: s })
-    notify(`${c.ref} marked ${s.toLowerCase()}`)
-  }
+  const startRecord = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endRecord = Math.min(currentPage * pageSize, totalCount);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <>
-      <PageHeader
-        title="Collections"
-        lede="Every weigh-in from every route. Verify the pending ones before they roll into the month’s settlement."
-        actions={
-          <>
-            <Button
-              variant="line"
-              icon={<Download size={14} />}
-              onClick={() => {
-                exportToCsv(
-                  `collections-${toISODate(new Date())}`,
-                  rows.map((c) => ({
-                    ref: c.ref, date: formatDate(c.collectedAt), farmer: L.farmerById.get(c.farmerId)?.name ?? '', route: L.collectorById.get(c.collectorId)?.area ?? '',
-                    gross_kg: c.gross, water_kg: c.water, bag_kg: c.bag, other_kg: c.other, final_kg: c.final, price_per_kg: c.pricePerKg, amount: c.amount, status: c.status,
-                  })),
-                )
-                notify(`Exported ${rows.length} lines to CSV`, 'info')
-              }}
-            >
-              Export
-            </Button>
-            <Button icon={<Plus size={15} />} onClick={() => setAdding(true)}>
-              New weigh-in
-            </Button>
-          </>
-        }
-      />
-
-      <div className="rise mb-6 flex flex-col gap-5" style={{ animationDelay: '60ms' }}>
-        <TableFilters<StatusFilter>
-          value={status}
-          onChange={setStatus}
-          options={[
-            { value: 'all', label: 'All', count: base.length },
-            { value: 'Pending', label: 'Pending', count: count('Pending') },
-            { value: 'Verified', label: 'Verified', count: count('Verified') },
-            { value: 'Disputed', label: 'Disputed', count: count('Disputed') },
-            { value: 'Settled', label: 'Settled', count: count('Settled') },
-          ]}
-        />
-        <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
-          <TableSearch value={q} onChange={setQ} placeholder="Ref, farmer or code" />
-          <label className="w-44">
-            <span className="eyebrow">Route</span>
-            <select value={route} onChange={(e) => setRoute(e.target.value)} className="field mt-1">
-              <option value="">All routes</option>
-              {L.collectors.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.area}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="w-36">
-            <span className="eyebrow">From</span>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="field mt-1" />
-          </label>
-          <label className="w-36">
-            <span className="eyebrow">To</span>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="field mt-1" />
-          </label>
-          {(q || route || from || to) && (
-            <button
-              onClick={() => {
-                setQ('')
-                setRoute('')
-                setFrom('')
-                setTo('')
-              }}
-              className="pb-2 text-[12.5px] text-[var(--margin)] hover:underline"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      </div>
-
-      {selected.size > 0 && (
-        <div className="rise sticky top-16 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-full bg-[var(--ink)] py-2 pl-5 pr-2 text-[var(--paper)] md:top-4">
-          <span className="figure flex-1 text-[12.5px]">{selected.size} selected</span>
-          <button onClick={() => bulk('Verified')} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] hover:bg-white/10">
-            <Check size={14} /> Verify
-          </button>
-          <button onClick={() => bulk('Disputed')} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] hover:bg-white/10">
-            <Flag size={13} /> Dispute
-          </button>
-          <button onClick={() => setSelected(new Set())} className="rounded-full px-3 py-1.5 text-[12.5px] opacity-70 hover:bg-white/10">
-            Clear
+    <div className="w-full max-w-[1280px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-start items-start gap-6 font-['Inter',sans-serif]">
+      {/* Backend Error Banner */}
+      {errorMessage && (
+        <div className="w-full p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-amber-900 flex items-center justify-between text-xs sm:text-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="size-4 sm:size-5 text-amber-700 shrink-0" />
+            <div>
+              <span className="font-semibold">Notice:</span> {errorMessage} Displaying offline cached collections.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchCollections(searchQuery, statusFilter, currentPage)}
+            disabled={isLoading}
+            className="px-3 py-1.5 bg-amber-200/60 hover:bg-amber-200 text-amber-900 rounded-lg font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Retry
           </button>
         </div>
       )}
 
-      <div className="rise" style={{ animationDelay: '120ms' }}>
-        <DataTable
-          rows={rows}
-          columns={columns}
-          rowKey={(c) => c.id}
-          onRowClick={setOpen}
-          initialSort={{ key: 'date', dir: 'desc' }}
-          selectable
-          selected={selected}
-          onSelectedChange={setSelected}
-          pageSize={14}
-          empty={<EmptyState title="No lines match" hint="Try widening the dates or clearing the search." />}
-          footer={
-            <tfoot>
-              <tr>
-                <td colSpan={5} className="!border-b-0 !border-t !border-t-[var(--ink)] text-right">
-                  <span className="eyebrow">Carried forward</span>
-                </td>
-                <td className="figure !border-b-0 !border-t !border-t-[var(--ink)] text-right">{formatNumber(totals.kg, 1)}</td>
-                <td className="figure !border-b-0 !border-t !border-t-[var(--ink)] text-right">{formatCurrency(totals.amt)}</td>
-                <td className="!border-b-0 !border-t !border-t-[var(--ink)]" />
-              </tr>
-            </tfoot>
-          }
-        />
+      {/* 1. Header */}
+      <div className="self-stretch flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col justify-start items-start gap-1 overflow-hidden">
+          <h1 className="self-stretch justify-start text-text-primary text-2xl sm:text-3xl font-bold font-['Inter'] tracking-tight">
+            Collections
+          </h1>
+          <div className="self-stretch justify-start text-text-secondary text-xs sm:text-sm font-normal font-['Inter']">
+            Monitor recorded collections and verify weights
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleExportCSV}
+          className="w-full sm:w-auto px-5 py-3 sm:py-3.5 bg-surface-card rounded-xl outline outline-[1.50px] outline-offset-[-1.50px] outline-border-default hover:bg-slate-50 active:bg-slate-100 flex justify-center items-center gap-2 cursor-pointer transition-colors shadow-xs shrink-0"
+        >
+          <span className="justify-start text-brand-primary text-sm sm:text-base font-semibold font-['Inter']">
+            Export CSV
+          </span>
+        </button>
       </div>
 
-      {/* detail sheet */}
-      <Modal open={!!open} onClose={() => setOpen(null)} title={open?.ref ?? ''} eyebrow={open ? formatDate(open.collectedAt) + ' · ' + formatTime(open.collectedAt) : ''} width={600}>
-        {open && (
-          <div className="grid gap-7">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="eyebrow">Farmer</p>
-                <Link to={`/farmers/${open.farmerId}`} className="mt-1 block text-[16px] underline decoration-[var(--hair)] underline-offset-4 hover:decoration-[var(--ink)]">
-                  {L.farmerById.get(open.farmerId)?.name ?? 'Removed farmer'}
-                </Link>
-                <p className="text-[12.5px] text-[var(--ink-3)]">
-                  via {L.collectorById.get(open.collectorId)?.name} · {L.collectorById.get(open.collectorId)?.area}
-                </p>
+      {/* 2. Search & Status Filter Bar */}
+      <div className="self-stretch flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 overflow-hidden">
+        {/* Search Input */}
+        <div className="flex-1 px-3.5 py-2.5 bg-surface-card rounded-xl outline outline-1 outline-offset-[-1px] outline-border-default flex justify-start items-center gap-2 overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-emerald-200">
+          <Search className="size-4 text-text-secondary shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search slip, farmer or collector"
+            className="flex-1 justify-start text-text-primary placeholder:text-text-secondary text-xs sm:text-sm font-normal font-['Inter'] bg-transparent outline-none border-none focus:ring-0"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+              aria-label="Clear search"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-2 shrink-0 overflow-x-auto pb-1 lg:pb-0">
+          {(['All', 'Verified', 'Pending sync', 'Needs review'] as const).map((pill) => (
+            <button
+              key={pill}
+              type="button"
+              onClick={() => {
+                setStatusFilter(pill);
+                setCurrentPage(1);
+              }}
+              className={`px-3.5 py-2 rounded-[999px] flex justify-start items-start overflow-hidden text-xs font-semibold font-['Inter'] whitespace-nowrap cursor-pointer transition-all ${
+                statusFilter === pill
+                  ? 'bg-brand-primary text-text-on-primary shadow-xs'
+                  : 'bg-surface-card outline outline-1 outline-offset-[-1px] outline-border-default text-text-secondary hover:text-text-primary hover:bg-slate-50'
+              }`}
+            >
+              {pill}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Collections Data Table */}
+      <div className="self-stretch bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start overflow-hidden shadow-xs">
+        <div className="w-full overflow-x-auto">
+          <div className="min-w-[780px] w-full">
+            {/* Header Row */}
+            <div className="self-stretch px-5 py-3 bg-surface-muted flex justify-start items-center gap-4 overflow-hidden border-b border-border-default">
+              <div className="w-16 justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Slip
               </div>
-              <Badge status={open.status} />
+              <div className="w-24 justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Date
+              </div>
+              <div className="w-36 justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Farmer
+              </div>
+              <div className="w-28 justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Collector
+              </div>
+              <div className="w-20 text-right justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Gross (kg)
+              </div>
+              <div className="w-24 text-right justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Reductions
+              </div>
+              <div className="w-20 text-right justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Final (kg)
+              </div>
+              <div className="flex-1 justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Status
+              </div>
             </div>
-            <PourBreakdown gross={open.gross} water={open.water} bag={open.bag} other={open.other} />
-            <div className="flex items-end justify-between border-y border-dashed border-[var(--hair)] py-4">
-              <div>
-                <p className="eyebrow">Payable</p>
-                <p className="font-display text-[40px] leading-none">{formatKg(open.final)}</p>
+
+            {/* Rows */}
+            {collections.length === 0 ? (
+              <div className="p-8 text-center text-text-secondary text-sm">
+                No collections found matching your filters.
               </div>
-              <div className="text-right">
-                <p className="eyebrow">@ Rs {open.pricePerKg}/kg</p>
-                <p className="figure text-[20px]">{formatCurrency(open.amount)}</p>
-              </div>
-            </div>
-            {open.status === 'Settled' ? (
-              <p className="text-[13px] text-[var(--ink-3)]">This line was paid out in a settlement and is locked.</p>
             ) : (
-              <div className="flex flex-wrap justify-between gap-2">
-                <Button variant="ghost" className="!text-[var(--danger)]" icon={<Trash2 size={14} />} onClick={() => setVoiding(open)}>
-                  Void line
-                </Button>
-                <div className="flex gap-2">
-                  {open.status !== 'Disputed' && (
-                    <Button variant="line" icon={<Flag size={13} />} onClick={() => setOne(open, 'Disputed')}>
-                      Dispute
-                    </Button>
-                  )}
-                  {open.status !== 'Verified' && (
-                    <Button icon={<Check size={14} />} onClick={() => setOne(open, 'Verified')}>
-                      Verify
-                    </Button>
-                  )}
+              collections.map((slip) => (
+                <div
+                  key={slip.id}
+                  onClick={() => {
+                    if (slip.status === 'Needs review') {
+                      setSelectedReviewId(slip.id);
+                    }
+                  }}
+                  className={`self-stretch px-5 py-3 border-b border-border-default flex justify-start items-center gap-4 overflow-hidden transition-colors ${
+                    slip.status === 'Needs review'
+                      ? 'cursor-pointer hover:bg-rose-50/40'
+                      : 'hover:bg-slate-50/80'
+                  }`}
+                >
+                  <div className="w-16 justify-start text-text-primary text-xs font-normal font-['Inter'] truncate">
+                    {slip.slipId}
+                  </div>
+                  <div className="w-24 justify-start text-text-primary text-xs font-normal font-['Inter']">
+                    {slip.dateLabel}
+                  </div>
+                  <div className="w-36 justify-start text-text-primary text-xs font-normal font-['Inter'] truncate">
+                    {slip.farmerName}
+                  </div>
+                  <div className="w-28 justify-start text-text-primary text-xs font-normal font-['Inter'] truncate">
+                    {slip.collectorName}
+                  </div>
+                  <div className="w-20 text-right justify-start text-text-primary text-xs font-normal font-['Inter']">
+                    {slip.grossKg.toFixed(2)}
+                  </div>
+                  <div className="w-24 text-right justify-start text-text-primary text-xs font-normal font-['Inter']">
+                    {slip.reductionsKg < 0
+                      ? `−${Math.abs(slip.reductionsKg).toFixed(2)}`
+                      : '0.00'}
+                  </div>
+                  <div className="w-20 text-right justify-start text-text-primary text-xs font-semibold font-['Inter']">
+                    {slip.finalKg.toFixed(2)}
+                  </div>
+                  <div className="flex-1 flex justify-start items-start overflow-hidden">
+                    {renderStatusBadge(slip.status)}
+                  </div>
                 </div>
-              </div>
+              ))
             )}
           </div>
-        )}
-      </Modal>
+        </div>
 
-      <ConfirmDialog
-        open={!!voiding}
-        title="Void this line?"
-        message={`${voiding?.ref} (${voiding ? formatKg(voiding.final) : ''}) will be removed from the ledger. This can't be undone.`}
-        confirmLabel="Void line"
-        danger
-        onClose={() => setVoiding(null)}
-        onConfirm={() => {
-          if (!voiding) return
-          L.deleteCollection(voiding.id)
-          setOpen(null)
-          notify(`${voiding.ref} voided`, 'danger')
-        }}
-      />
+        {/* Pagination Footer */}
+        <div className="self-stretch px-5 py-3 flex justify-between items-center gap-2 overflow-hidden bg-white">
+          <div className="flex-1 justify-start text-text-secondary text-xs font-normal font-['Inter']">
+            Showing {startRecord}–{endRecord} of {totalCount}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage <= 1}
+              className={`px-3.5 py-2 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-border-default flex justify-start items-start overflow-hidden text-brand-primary text-xs font-semibold font-['Inter'] transition-colors ${
+                currentPage <= 1
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:bg-slate-50 cursor-pointer active:bg-slate-100'
+              }`}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className={`px-3.5 py-2 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-border-default flex justify-start items-start overflow-hidden text-brand-primary text-xs font-semibold font-['Inter'] transition-colors ${
+                currentPage >= totalPages
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'hover:bg-slate-50 cursor-pointer active:bg-slate-100'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <Modal open={adding} onClose={() => setAdding(false)} title="New weigh-in" eyebrow="Enter a line" width={620}>
-        <CollectionForm
-          onCancel={() => setAdding(false)}
-          onSubmit={(v) => {
-            const e = L.addCollection({ ...v, collectedAt: new Date(`${v.date}T${new Date().toTimeString().slice(0, 8)}`).toISOString() })
-            setAdding(false)
-            notify(`${e.ref} entered — ${formatKg(e.final)} for ${L.farmerById.get(e.farmerId)?.name}`)
-          }}
-        />
-      </Modal>
-    </>
-  )
-}
+      {/* 4. Needs Review Weight Discrepancy Resolution Card */}
+      {activeReviewSlip && (
+        <div className="self-stretch px-5 sm:px-6 py-5 bg-surface-card rounded-2xl outline outline-1 outline-offset-[-1px] outline-border-default flex flex-col justify-start items-start gap-4 overflow-hidden shadow-xs">
+          {/* Card Header */}
+          <div className="self-stretch flex flex-wrap justify-between items-center gap-2.5 overflow-hidden">
+            <h2 className="flex-1 justify-start text-text-primary text-lg font-bold font-['Inter']">
+              Needs review · Slip {activeReviewSlip.slipId}
+            </h2>
+            <div
+              data-status="danger"
+              className="px-2.5 py-1 bg-status-danger-bg rounded-[999px] flex justify-start items-center shrink-0"
+            >
+              <span className="justify-start text-status-danger text-xs font-semibold font-['Inter']">
+                ! Needs review
+              </span>
+            </div>
+          </div>
+
+          {/* Discrepancy Description */}
+          <p className="self-stretch justify-start text-text-secondary text-sm font-normal font-['Inter']">
+            The collector’s final weight differs from the server recalculation by{' '}
+            {(activeReviewSlip.serverReview?.discrepancyKg ?? 1.9).toFixed(2)} kg. Compare and
+            choose how to resolve.
+          </p>
+
+          {/* Side-by-side Weight Comparison Cards */}
+          <div className="self-stretch flex flex-col sm:flex-row justify-start items-stretch gap-4 overflow-hidden">
+            {/* Left: Submitted by collector */}
+            <div className="flex-1 px-4 py-3.5 bg-surface-muted rounded-xl flex flex-col justify-start items-start gap-1.5 overflow-hidden">
+              <div className="self-stretch justify-start text-text-secondary text-xs font-semibold font-['Inter']">
+                Submitted by collector
+              </div>
+              <div className="self-stretch justify-start text-text-primary text-base font-medium font-['Inter']">
+                Gross {activeReviewSlip.grossKg.toFixed(2)} kg
+              </div>
+              <div className="self-stretch justify-start text-text-primary text-base font-medium font-['Inter']">
+                Reductions −{Math.abs(activeReviewSlip.reductionsKg).toFixed(2)} kg
+              </div>
+              <div className="self-stretch justify-start text-text-primary text-base font-bold font-['Inter']">
+                Final {activeReviewSlip.finalKg.toFixed(2)} kg
+              </div>
+            </div>
+
+            {/* Right: Server-verified */}
+            <div className="flex-1 px-4 py-3.5 bg-brand-tint rounded-xl flex flex-col justify-start items-start gap-1.5 overflow-hidden">
+              <div className="self-stretch justify-start text-teal-950 text-xs font-semibold font-['Inter']">
+                Server-verified
+              </div>
+              <div className="self-stretch justify-start text-teal-950 text-base font-medium font-['Inter']">
+                Gross {(activeReviewSlip.serverReview?.grossKg ?? activeReviewSlip.grossKg).toFixed(2)} kg
+              </div>
+              <div className="self-stretch justify-start text-teal-950 text-base font-medium font-['Inter']">
+                Reductions −
+                {Math.abs(
+                  activeReviewSlip.serverReview?.reductionsKg ?? activeReviewSlip.reductionsKg
+                ).toFixed(2)}{' '}
+                kg
+              </div>
+              <div className="self-stretch justify-start text-teal-950 text-base font-bold font-['Inter']">
+                Final {(activeReviewSlip.serverReview?.finalKg ?? activeReviewSlip.finalKg).toFixed(2)} kg
+              </div>
+            </div>
+          </div>
+
+          {/* Resolution Action Buttons */}
+          <div className="self-stretch flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 overflow-hidden">
+            <button
+              type="button"
+              disabled={isActionLoading}
+              onClick={() => handleRequestRecheck(activeReviewSlip)}
+              className="px-5 py-3 sm:py-3.5 bg-surface-card rounded-xl outline outline-[1.50px] outline-offset-[-1.50px] outline-border-default hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 flex justify-center items-center gap-2 cursor-pointer transition-colors shadow-xs"
+            >
+              <span className="justify-start text-brand-primary text-sm sm:text-base font-semibold font-['Inter']">
+                Request recheck
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isActionLoading}
+              onClick={() => handleAcceptServerWeight(activeReviewSlip)}
+              className="px-5 py-3 sm:py-3.5 bg-brand-primary hover:bg-brand-primary-hover active:bg-emerald-800 disabled:opacity-50 rounded-xl flex justify-center items-center gap-2 cursor-pointer transition-colors shadow-xs text-white"
+            >
+              {isActionLoading && <Loader2 className="size-4 animate-spin text-white" />}
+              <span className="justify-start text-text-on-primary text-sm sm:text-base font-semibold font-['Inter']">
+                Accept server weight
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

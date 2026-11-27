@@ -76,6 +76,56 @@ export interface ToastMessage {
   message?: string;
 }
 
+// -------------------------------------------------------------
+// Production Dashboard API Types (GET /api/admin/dashboard)
+// -------------------------------------------------------------
+
+export interface DashboardStats {
+  collectedTodayKg: number;
+  verifiedSlipsCount: number;
+  openRequestsCount: number;
+  activeCollectorsCount: number;
+  totalCollectorsCount: number;
+  onLeaveCollectorsCount: number;
+  monthlySettlementAmountLkr: number;
+  monthlySettlementFormatted: string;
+  monthlySettlementMonth: string;
+  isSettlementEstimated: boolean;
+}
+
+export interface DailyCollectionTrend {
+  day: string; // e.g. "Sat 8"
+  date?: string;
+  kg: number;
+}
+
+export interface DashboardTeaReadyRequest {
+  id: string;
+  farmerName: string;
+  locationOrBlock: string; // e.g. "Block 03"
+  bagsCount: number;
+  status: 'Pending' | 'Assigned' | 'En Route' | 'Completed';
+}
+
+export interface DashboardCollectionSlip {
+  id: string; // e.g. "L-4819"
+  farmerName: string;
+  collectorName: string;
+  grossKg: number;
+  reductionsKg: number;
+  finalKg: number;
+  status: 'Verified' | 'Pending sync' | 'Needs review' | 'Flagged Wt';
+  createdAt?: string;
+}
+
+export interface AdminDashboardData {
+  stats: DashboardStats;
+  weeklyTrend: DailyCollectionTrend[];
+  openRequests: DashboardTeaReadyRequest[];
+  recentCollections: DashboardCollectionSlip[];
+  totalCollectionsCount: number;
+}
+
 export interface DashboardContextType {
   activeTab: string;
   setActiveTab: (tab: string) => void;

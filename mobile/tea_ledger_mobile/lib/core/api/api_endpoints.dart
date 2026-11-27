@@ -7,6 +7,9 @@ class ApiEndpoints {
   static const String changePassword = '/api/Auth/change-password';
 
   static const String farmerDashboard = '/api/dashboard/farmer';
-
   static const String collectorDashboard = '/api/dashboard/collector';
+
+  // Farmer tea-ready requests
+  static const String createTeaReadyRequest = '/api/collection-requests';
+  static const String myTeaReadyRequests = '/api/collection-requests/my';
 }

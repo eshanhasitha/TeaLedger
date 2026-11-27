@@ -1,20 +1,15 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  ClipboardList,
-  Leaf,
-  Scale,
+  Home,
   Users,
   UserCheck,
-  ShieldCheck,
-  Coins,
-  TrendingUp,
+  ClipboardList,
+  Tag,
   BookOpen,
-  Landmark,
-  Layers,
-  Percent,
-  FileText,
-  DollarSign,
+  Wallet,
+  BarChart3,
+  Shield,
   LogOut,
   X,
 } from 'lucide-react';
@@ -30,201 +25,138 @@ interface SidebarProps {
 interface NavItem {
   id: string;
   label: string;
+  path: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
-  badgeColor?: 'green' | 'orange' | 'red';
-}
-
-interface NavSection {
-  title: string;
-  items: NavItem[];
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { activeTab, setActiveTab } = useDashboard();
   const { user, logout } = useAuth();
 
-  const navSections: NavSection[] = [
-    {
-      title: 'MAIN',
-      items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      ],
-    },
-    {
-      title: 'OPERATIONS',
-      items: [
-        { id: 'collection-requests', label: 'Collection Requests', icon: ClipboardList, badge: '14', badgeColor: 'green' },
-        { id: 'collections', label: 'Collections', icon: Leaf },
-        { id: 'weight-verification', label: 'Weight Verification', icon: Scale, badge: '6', badgeColor: 'orange' },
-      ],
-    },
-    {
-      title: 'PEOPLE',
-      items: [
-        { id: 'farmers', label: 'Farmers', icon: Users },
-        { id: 'collectors', label: 'Collectors', icon: UserCheck },
-        { id: 'users', label: 'Users', icon: ShieldCheck },
-      ],
-    },
-    {
-      title: 'FINANCE',
-      items: [
-        { id: 'tea-prices', label: 'Tea Prices', icon: Coins },
-        { id: 'earnings', label: 'Earnings', icon: TrendingUp },
-        { id: 'passbooks', label: 'Passbooks', icon: BookOpen },
-        { id: 'loans', label: 'Loans', icon: Landmark },
-        { id: 'materials', label: 'Materials', icon: Layers },
-        { id: 'deductions', label: 'Deductions', icon: Percent },
-        { id: 'settlements', label: 'Settlements', icon: FileText, badge: 'Action', badgeColor: 'red' },
-        { id: 'payments', label: 'Payments', icon: DollarSign },
-      ],
-    },
+  const navItems: NavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: Home },
+    { id: 'farmers', label: 'Farmers', path: '/farmers', icon: Users },
+    { id: 'collectors', label: 'Collectors', path: '/collectors', icon: UserCheck },
+    { id: 'collections', label: 'Collections', path: '/collections', icon: ClipboardList },
+    { id: 'tea-prices', label: 'Tea prices', path: '/tea-prices', icon: Tag },
+    { id: 'deductions', label: 'Loans & deductions', path: '/deductions', icon: BookOpen },
+    { id: 'settlements', label: 'Settlements', path: '/settlements', icon: Wallet },
+    { id: 'reports', label: 'Reports', path: '/reports', icon: BarChart3 },
+    { id: 'audit-log', label: 'Audit log', path: '/audit-log', icon: Shield },
   ];
 
-  const handleSelectTab = (id: string) => {
-    setActiveTab(id);
-    if (onCloseMobile) onCloseMobile();
+  const handleSelect = (item: NavItem) => {
+    setActiveTab(item.id);
+    navigate(item.path);
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
+  const isCurrentActive = (item: NavItem) => {
+    if (location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)) {
+      return true;
+    }
+    return activeTab === item.id;
   };
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={onCloseMobile}
         />
       )}
 
+      {/* Sidebar Panel - Fixed 240px (#073B26) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col border-r border-[#e8e5de] bg-[#fbf9f5] transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-60 shrink-0 bg-[#073B26] px-4 py-6 flex flex-col justify-start items-start gap-1 overflow-y-auto transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="flex h-18 items-center justify-between border-b border-[#ece8e0] px-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white p-1 shadow-xs border border-emerald-100">
+        <div className="self-stretch px-2 pb-5 flex justify-between items-center gap-2.5 overflow-hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="size-9 bg-[#E1F4E8] rounded-[10px] flex justify-center items-center overflow-hidden shrink-0">
               <img
+                className="size-6 object-contain"
                 src={logoImg}
-                alt="TeaLedger Logo"
-                className="h-8 w-8 object-contain"
+                alt="TeaLedger"
               />
             </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-[#162a1e]">
+            <div className="flex flex-col justify-start items-start overflow-hidden">
+              <div className="text-white text-lg font-bold leading-tight">
                 TeaLedger
-              </span>
-              <span className="text-[10px] font-semibold tracking-wider text-[#758479]">
-                ESTATE ADMIN V2.
-              </span>
+              </div>
+              <div className="text-emerald-200/75 text-xs font-normal">
+                Admin console
+              </div>
             </div>
           </div>
-          {onCloseMobile && (
-            <button
-              onClick={onCloseMobile}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200/60 lg:hidden"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
+
+          {/* Close button for mobile */}
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="lg:hidden text-white/70 hover:text-white p-1 rounded-lg"
+          >
+            <X className="size-5" />
+          </button>
         </div>
 
-        {/* Scrollable Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {navSections.map((section) => (
-            <div key={section.title} className="space-y-1">
-              <div className="px-3 pb-1 text-[11px] font-bold tracking-wider text-[#8b988f]">
-                {section.title}
-              </div>
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
-                  const isActive = activeTab === item.id;
-                  const Icon = item.icon;
+        {/* Navigation Items */}
+        <nav className="self-stretch flex flex-col gap-1">
+          {navItems.map((item) => {
+            const active = isCurrentActive(item);
+            const IconComponent = item.icon;
 
-                  let badgeBg = 'bg-emerald-100 text-emerald-800';
-                  if (item.badgeColor === 'orange') {
-                    badgeBg = 'bg-orange-100 text-orange-800';
-                  } else if (item.badgeColor === 'red') {
-                    badgeBg = 'bg-rose-100 text-rose-700 font-bold';
-                  }
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleSelect(item)}
+                className={`self-stretch px-3 py-2.5 rounded-lg flex justify-start items-center gap-3 overflow-hidden cursor-pointer transition-colors text-left ${
+                  active
+                    ? 'bg-[#0B5D3B] text-white font-semibold'
+                    : 'text-emerald-100/75 hover:bg-white/10 hover:text-white font-medium'
+                }`}
+              >
+                <IconComponent className={`size-[18px] shrink-0 ${active ? 'text-white' : 'text-emerald-200/80'}`} />
+                <span className="flex-1 text-sm">
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
 
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectTab(item.id)}
-                      className={`group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                        isActive
-                          ? 'bg-[#183a27] text-white shadow-xs'
-                          : 'text-[#425247] hover:bg-[#ede9df]/70 hover:text-[#183a27]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon
-                          className={`h-4 w-4 shrink-0 transition-colors ${
-                            isActive ? 'text-emerald-300' : 'text-[#6e7d73] group-hover:text-[#183a27]'
-                          }`}
-                        />
-                        <span className="truncate">{item.label}</span>
-                      </div>
+        {/* Spacer */}
+        <div className="flex-1 min-h-[40px]" />
 
-                      {item.badge && (
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none ${
-                            isActive
-                              ? 'bg-emerald-500/30 text-emerald-200'
-                              : badgeBg
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+        {/* Bottom User Profile */}
+        <div className="self-stretch px-2 pt-3 flex items-center justify-between border-t border-white/10 mt-auto">
+          <div className="flex flex-col justify-start items-start gap-0.5 overflow-hidden">
+            <div className="text-white text-xs font-semibold truncate max-w-[140px]">
+              {user?.name || 'Sunil Jayawardena'}
             </div>
-          ))}
-        </div>
-
-        {/* Bottom Profile Card */}
-        <div className="border-t border-[#ece8e0] p-3.5 bg-[#f5f1e8]/60">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src={user?.avatarUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=120&h=120&q=80"}
-                alt={user?.name || "Sunil Jayawardena"}
-                className="h-10 w-10 rounded-full object-cover border-2 border-emerald-700/20"
-              />
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500"></span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="truncate text-xs font-bold text-[#1a2b20]">
-                {user?.name || "Sunil Jayawardena"}
-              </div>
-              <div className="truncate text-[11px] text-[#637268]">
-                {user?.role || "Chief Estate Admin"}
-              </div>
-              <div className="truncate text-[10px] text-[#86948a] font-medium">
-                {user?.division || "Nuwara Eliya Central"}
-              </div>
+            <div className="text-emerald-200/70 text-[11px] font-normal">
+              {user?.role || 'Administrator'}
             </div>
           </div>
           <button
-            onClick={() => {
-              if (window.confirm('Do you want to log out of TeaLedger Admin?')) {
-                logout();
-              }
-            }}
-            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md border border-[#e4ded3] bg-white py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer"
+            type="button"
+            onClick={logout}
+            title="Log out"
+            className="p-1.5 rounded-lg text-emerald-200/70 hover:text-rose-300 hover:bg-white/10 transition-colors cursor-pointer"
           >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Log Out</span>
+            <LogOut className="size-4" />
           </button>
         </div>
       </aside>
     </>
   );
 };
-

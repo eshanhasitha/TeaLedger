@@ -1,258 +1,372 @@
-﻿import { Banknote, Check, FilePlus2, Printer } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { PageHeader } from '../../components/layout/PageHeader'
-import { DataTable, type Column } from '../../components/tables/DataTable'
-import { TableFilters } from '../../components/tables/TableFilters'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { EmptyState } from '../../components/ui/EmptyState'
-import { Modal } from '../../components/ui/Modal'
-import { useLedger } from '../../hooks/useLedger'
-import { useNotifications } from '../../hooks/useNotifications'
-import type { Settlement, SettlementStatus } from '../../types/ledger.types'
-import { formatCurrency } from '../../utils/formatCurrency'
-import { formatPeriod, periodOf, toISODate } from '../../utils/formatDate'
-import { formatKg, formatNumber } from '../../utils/formatNumber'
+import React, { useState, useEffect } from 'react';
+import {
+  Download,
+  Clock,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  RefreshCw,
+  X,
+  Loader2,
+} from 'lucide-react';
+import { useDashboard } from '../../hooks/useDashboard';
+import {
+  settlementService,
+  INITIAL_MONTHLY_SETTLEMENTS,
+} from '../../services/settlementService';
+import type { MonthlySettlementPeriodRow } from '../../types/settlement.types';
 
-type Show = 'all' | SettlementStatus
+function formatNumber(val: number): string {
+  return new Intl.NumberFormat('en-US').format(val);
+}
 
-export default function SettlementsPage() {
-  const L = useLedger()
-  const { notify } = useNotifications()
-  const periods = useMemo(() => {
-    const now = new Date()
-    return Array.from({ length: 3 }, (_, i) => periodOf(toISODate(new Date(now.getFullYear(), now.getMonth() - i, 1))))
-  }, [])
-  const [period, setPeriod] = useState(periods[1])
-  const [show, setShow] = useState<Show>('all')
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [slip, setSlip] = useState<Settlement | null>(null)
-  const [paying, setPaying] = useState(false)
+export const SettlementsPage: React.FC = () => {
+  const { addToast } = useDashboard();
 
-  const inPeriod = L.settlements.filter((s) => s.period === period)
-  const rows = show === 'all' ? inPeriod : inPeriod.filter((s) => s.status === show)
-  const sum = (xs: Settlement[], k: 'net' | 'kg' | 'deductions' | 'grossAmount' | 'loanRepayments') => xs.reduce((a, s) => a + s[k], 0)
-  const pendingLines = L.collections.filter((c) => c.status === 'Pending' && periodOf(toISODate(new Date(c.collectedAt))) === period).length
+  const [rows, setRows] = useState<MonthlySettlementPeriodRow[]>(INITIAL_MONTHLY_SETTLEMENTS);
+  const [totalCount, setTotalCount] = useState<number>(12);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<MonthlySettlementPeriodRow | null>(null);
+  const [isFinalizing, setIsFinalizing] = useState<boolean>(false);
 
-  const columns: Column<Settlement>[] = [
-    { key: 'ref', header: 'Ref', sort: (s) => s.ref, render: (s) => <span className="figure text-[12px] text-[var(--ink-2)]">{s.ref}</span> },
-    { key: 'farmer', header: 'Farmer', sort: (s) => L.farmerById.get(s.farmerId)?.name ?? '', render: (s) => L.farmerById.get(s.farmerId)?.name ?? 'Removed farmer' },
-    { key: 'kg', header: 'Leaf', align: 'right', sort: (s) => s.kg, render: (s) => <span className="figure">{formatNumber(s.kg, 1)} kg</span> },
-    { key: 'gross', header: 'Earned', align: 'right', sort: (s) => s.grossAmount, render: (s) => <span className="figure text-[var(--ink-2)]">{formatCurrency(s.grossAmount)}</span> },
-    { key: 'ded', header: 'Less', align: 'right', sort: (s) => s.deductions, render: (s) => <span className="figure text-[var(--margin)]">âˆ’{formatNumber(s.deductions, 2)}</span> },
-    { key: 'net', header: 'Net pay', align: 'right', sort: (s) => s.net, render: (s) => <span className="figure font-medium">{formatCurrency(s.net)}</span> },
-    { key: 'st', header: 'Status', sort: (s) => s.status, render: (s) => <Badge status={s.status} /> },
-  ]
+  const pageSize = 4;
 
-  const act = (status: SettlementStatus) => {
-    const ids = [...selected].filter((id) => {
-      const s = L.settlements.find((x) => x.id === id)
-      return s && (status === 'Approved' ? s.status === 'Draft' : s.status === 'Approved')
-    })
-    if (!ids.length) {
-      notify(status === 'Approved' ? 'Only drafts can be approved' : 'Only approved settlements can be paid', 'info')
-      return
+  const loadSettlements = () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    settlementService
+      .getMonthlySettlements()
+      .then((res) => {
+        setRows(res.items);
+        setTotalCount(res.totalCount);
+        setIsLoading(false);
+      })
+      .catch((err: unknown) => {
+        setErrorMessage(
+          err instanceof Error ? err.message : 'Failed to load settlements from backend.'
+        );
+        setRows(INITIAL_MONTHLY_SETTLEMENTS);
+        setTotalCount(12);
+        setIsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    let ignore = false;
+
+    settlementService
+      .getMonthlySettlements()
+      .then((res) => {
+        if (!ignore) {
+          setRows(res.items);
+          setTotalCount(res.totalCount);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          setErrorMessage(
+            err instanceof Error ? err.message : 'Failed to load settlements from backend.'
+          );
+          setRows(INITIAL_MONTHLY_SETTLEMENTS);
+          setTotalCount(12);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(Math.max(totalCount, rows.length) / pageSize));
+  const pagedRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const startEntry = rows.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endEntry = Math.min(currentPage * pageSize, Math.max(totalCount, rows.length));
+  const displayedTotal = Math.max(totalCount, rows.length);
+
+  const handleExportCsv = () => {
+    settlementService.exportSettlementsCSV(rows);
+    addToast({
+      type: 'success',
+      title: 'Export Complete',
+      message: 'Settlement history exported as CSV.',
+    });
+  };
+
+  const handleFinalizePeriod = async (row: MonthlySettlementPeriodRow) => {
+    setIsFinalizing(true);
+    try {
+      await settlementService.finalizePeriod(row);
+      addToast({
+        type: 'success',
+        title: 'Settlement Finalized',
+        message: `${row.periodLabel} settlements finalized.`,
+      });
+      setSelectedPeriod(null);
+      loadSettlements();
+    } catch (err: unknown) {
+      addToast({
+        type: 'error',
+        title: 'Finalization Failed',
+        message:
+          err instanceof Error ? err.message : 'Unable to finalize settlement period.',
+      });
+    } finally {
+      setIsFinalizing(false);
     }
-    L.setSettlementStatus(ids, status)
-    setSelected(new Set())
-    notify(`${ids.length} settlement${ids.length > 1 ? 's' : ''} ${status.toLowerCase()}`)
-  }
-
-  const selRows = inPeriod.filter((s) => selected.has(s.id))
+  };
 
   return (
-    <>
-      <PageHeader
-        title="Settlements"
-        lede="Close a month: draft settlements from verified leaf, approve them, then mark them paid. Paying a settlement locks its weigh-ins."
-        actions={
-          <Button
-            icon={<FilePlus2 size={15} />}
-            onClick={() => {
-              const n = L.generateSettlements(period)
-              notify(n ? `Drafted ${n} settlements for ${formatPeriod(period)}` : 'Every farmer with verified leaf is already settled for this month', n ? 'success' : 'info')
-            }}
-          >
-            Draft for {formatPeriod(period).split(' ')[0]}
-          </Button>
-        }
-      />
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
+      {/* Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Settlements</h1>
+          <p className="text-sm text-text-muted mt-0.5">
+            Monthly payouts across all tea farmers
+          </p>
+        </div>
 
-      <div className="rise mb-8 flex flex-wrap items-center gap-2" style={{ animationDelay: '60ms' }}>
-        {periods.map((p) => (
-          <button
-            key={p}
-            onClick={() => {
-              setPeriod(p)
-              setSelected(new Set())
-            }}
-            className={`font-display rounded-full px-4 py-1 text-[22px] transition-colors ${p === period ? 'bg-[var(--ink)] text-[var(--paper)]' : 'text-[var(--ink-3)] hover:text-[var(--ink)]'}`}
-          >
-            {formatPeriod(p)}
-          </button>
-        ))}
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-text-primary bg-surface-card border border-border-default rounded-lg hover:bg-surface-muted transition-colors self-start sm:self-auto shadow-xs cursor-pointer"
+        >
+          <Download className="w-4 h-4 text-text-secondary" />
+          Export CSV
+        </button>
       </div>
 
-      <section className="rise mb-10 grid grid-cols-2 border-y border-[var(--ink)] lg:grid-cols-5" style={{ animationDelay: '100ms' }}>
-        {[
-          ['Leaf settled', formatKg(sum(inPeriod, 'kg'))],
-          ['Earned', formatCurrency(sum(inPeriod, 'grossAmount'))],
-          ['Deductions', formatCurrency(sum(inPeriod, 'deductions'))],
-          ['Loan repayments', formatCurrency(sum(inPeriod, 'loanRepayments'))],
-          ['Net payable', formatCurrency(sum(inPeriod, 'net'))],
-        ].map(([k, v], i) => (
-          <div key={k} className={`px-4 py-5 sm:px-6 ${i % 2 ? 'border-l' : ''} ${i > 1 ? 'max-lg:border-t' : ''} ${i === 2 ? 'lg:border-l' : ''} border-[var(--hair)]`}>
-            <p className="eyebrow">{k}</p>
-            <p className={`figure mt-2 whitespace-nowrap text-[16px] xl:text-[20px] ${i === 3 ? 'text-[var(--leaf)]' : ''}`}>{v}</p>
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="bg-status-error-bg border border-status-error-text/20 text-status-error-text rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMessage} (Showing fallback sample periods.)</span>
           </div>
-        ))}
-      </section>
-
-      {pendingLines > 0 && (
-        <p className="rise mb-6 border-l-2 border-[var(--amber)] pl-3 text-[13px] text-[var(--ink-2)]">
-          {pendingLines} weigh-ins in {formatPeriod(period)} are still pending and wonâ€™t be included.{' '}
-          <Link to="/collections?status=Pending" className="underline underline-offset-4">
-            Verify them first
-          </Link>
-          .
-        </p>
+          <button
+            type="button"
+            onClick={loadSettlements}
+            className="inline-flex items-center gap-1.5 font-semibold underline hover:no-underline cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Retry
+          </button>
+        </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-        <TableFilters<Show>
-          value={show}
-          onChange={setShow}
-          options={[
-            { value: 'all', label: 'All', count: inPeriod.length },
-            { value: 'Draft', label: 'Draft', count: inPeriod.filter((s) => s.status === 'Draft').length },
-            { value: 'Approved', label: 'Approved', count: inPeriod.filter((s) => s.status === 'Approved').length },
-            { value: 'Paid', label: 'Paid', count: inPeriod.filter((s) => s.status === 'Paid').length },
-          ]}
-        />
-        {selected.size > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="figure text-[12px] text-[var(--ink-3)]">{selected.size} selected</span>
-            <Button size="sm" variant="line" icon={<Check size={13} />} onClick={() => act('Approved')}>
-              Approve
-            </Button>
-            <Button size="sm" icon={<Banknote size={13} />} onClick={() => setPaying(true)}>
-              Mark paid
-            </Button>
+      {/* Monthly Settlement History Card */}
+      <div className="bg-surface-card border border-border-default rounded-xl shadow-[0px_1px_2px_0px_rgba(16,24,40,0.04)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-text-primary">
+            Monthly settlement history
+          </h2>
+          {isLoading && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-text-muted">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Refreshing
+            </span>
+          )}
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[780px]">
+            <thead>
+              <tr className="border-b border-border-subtle text-xs font-medium text-text-muted">
+                <th className="py-3 px-5 font-medium">Period</th>
+                <th className="py-3 px-4 font-medium text-right">Farmers</th>
+                <th className="py-3 px-4 font-medium text-right">Verified (kg)</th>
+                <th className="py-3 px-4 font-medium text-right">Gross (LKR)</th>
+                <th className="py-3 px-4 font-medium text-right">Net payable (LKR)</th>
+                <th className="py-3 px-5 font-medium">Finalized on</th>
+                <th className="py-3 px-5 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle text-sm">
+              {pagedRows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-10 px-5 text-center text-text-muted">
+                    No settlement periods found.
+                  </td>
+                </tr>
+              ) : (
+                pagedRows.map((row) => (
+                  <tr
+                    key={row.id}
+                    onClick={() => setSelectedPeriod(row)}
+                    className="hover:bg-surface-muted/50 transition-colors cursor-pointer"
+                  >
+                    <td className="py-4 px-5 font-semibold text-text-primary whitespace-nowrap">
+                      {row.periodLabel}
+                    </td>
+                    <td className="py-4 px-4 text-right text-text-secondary tabular-nums whitespace-nowrap">
+                      {formatNumber(row.farmersCount)}
+                    </td>
+                    <td className="py-4 px-4 text-right text-text-secondary tabular-nums whitespace-nowrap">
+                      {formatNumber(row.verifiedKg)}
+                    </td>
+                    <td className="py-4 px-4 text-right text-text-secondary tabular-nums whitespace-nowrap">
+                      {formatNumber(row.grossLkr)}
+                    </td>
+                    <td className="py-4 px-4 text-right font-semibold text-text-primary tabular-nums whitespace-nowrap">
+                      {formatNumber(row.netPayableLkr)}
+                    </td>
+                    <td className="py-4 px-5 text-text-secondary whitespace-nowrap">
+                      {row.finalizedOnLabel}
+                    </td>
+                    <td className="py-4 px-5 whitespace-nowrap">
+                      {row.status === 'Draft' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-status-warning-bg text-status-warning-text">
+                          <Clock className="w-3 h-3" />
+                          Draft
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-status-success-bg text-status-success-text">
+                          <Check className="w-3 h-3" />
+                          Finalized
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="px-5 py-3.5 border-t border-border-subtle flex items-center justify-between gap-4">
+          <p className="text-xs text-text-muted">
+            Showing {startEntry}–{endEntry} of {formatNumber(displayedTotal)}
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              aria-label="Previous page"
+              className="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-border-default text-text-secondary hover:bg-surface-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(1)}
+              className={`w-8 h-8 inline-flex items-center justify-center rounded-lg text-xs font-semibold cursor-pointer ${
+                currentPage === 1
+                  ? 'bg-brand-primary text-text-on-primary'
+                  : 'border border-border-default text-text-secondary hover:bg-surface-muted'
+              }`}
+            >
+              1
+            </button>
+            {totalPages > 1 && currentPage > 1 && (
+              <button
+                type="button"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-xs font-semibold bg-brand-primary text-text-on-primary"
+              >
+                {currentPage}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={currentPage >= totalPages || rows.length <= pageSize}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Next page"
+              className="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-border-default text-text-secondary hover:bg-surface-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
-      <DataTable
-        rows={rows}
-        columns={columns}
-        rowKey={(s) => s.id}
-        selectable
-        selected={selected}
-        onSelectedChange={setSelected}
-        onRowClick={setSlip}
-        initialSort={{ key: 'net', dir: 'desc' }}
-        empty={
-          <EmptyState
-            title={`Nothing drafted for ${formatPeriod(period)}`}
-            hint="Draft settlements to roll verified weigh-ins into a payslip per farmer."
-            action={
-              <Button variant="line" onClick={() => notify(`Drafted ${L.generateSettlements(period)} settlements`)}>
-                Draft now
-              </Button>
-            }
-          />
-        }
-      />
-
-      <ConfirmDialog
-        open={paying}
-        title="Mark as paid?"
-        message={`Approved settlements in your selection (${formatCurrency(sum(selRows.filter((s) => s.status === 'Approved'), 'net'))}) will be marked paid and their weigh-ins locked as settled.`}
-        confirmLabel="Mark paid"
-        onClose={() => setPaying(false)}
-        onConfirm={() => act('Paid')}
-      />
-
-      <Modal open={!!slip} onClose={() => setSlip(null)} title="Payslip" eyebrow={slip?.ref} width={480}>
-        {slip && (
-          <div>
-            <div className="flex items-start justify-between">
+      {/* Period Summary / Finalize Modal */}
+      {selectedPeriod && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-surface-card border border-border-default rounded-2xl max-w-md w-full p-6 shadow-xl space-y-5">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[16px]">{L.farmerById.get(slip.farmerId)?.name}</p>
-                <p className="figure text-[12px] text-[var(--ink-3)]">
-                  {L.farmerById.get(slip.farmerId)?.code} Â· {formatPeriod(slip.period)}
+                <h3 className="text-lg font-bold text-text-primary">
+                  {selectedPeriod.periodLabel} Settlement
+                </h3>
+                <p className="text-xs text-text-muted mt-0.5">
+                  Status: {selectedPeriod.status}
+                  {selectedPeriod.finalizedOnLabel !== '—'
+                    ? ` · Finalized ${selectedPeriod.finalizedOnLabel}`
+                    : ''}
                 </p>
               </div>
-              <Badge status={slip.status} />
+              <button
+                type="button"
+                onClick={() => setSelectedPeriod(null)}
+                className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-muted cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <dl className="figure mt-6 text-[13.5px]">
-              {[
-                ['Green leaf', formatKg(slip.kg)],
-                ['Average tea price', `${formatCurrency(slip.averageTeaPricePerKg)} / kg`],
-                ['Gross tea income', formatCurrency(slip.grossAmount)],
-                ['Deduction quantity', formatKg(slip.totalDeductionQuantityKg)],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between border-b border-dashed border-[var(--hair)] py-2.5">
-                  <dt className="font-sans text-[var(--ink-2)]">{k}</dt>
-                  <dd>{v}</dd>
-                </div>
-              ))}
-              <div className="border-b border-dashed border-[var(--hair)] py-2.5">
-                <p className="mb-1 font-sans text-[var(--ink-2)]">Material deductions</p>
-                {slip.deductionBreakdown.map((deduction, index) => (
-                  <div key={`${deduction.category}-${deduction.unit}-${index}`} className="flex justify-between gap-3 py-1">
-                    <span>{deduction.category} - {formatNumber(deduction.quantity, 2)} {deduction.unit} x {formatCurrency(deduction.unitPrice)}</span>
-                    <span>{formatCurrency(deduction.amount)}</span>
-                  </div>
-                ))}
-                <div className="mt-1 flex justify-between font-medium">
-                  <span>Total material deductions</span>
-                  <span>{formatCurrency(slip.deductions)}</span>
-                </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm bg-surface-bg rounded-xl p-4 border border-border-subtle">
+              <div>
+                <p className="text-xs text-text-muted">Farmers</p>
+                <p className="font-semibold text-text-primary mt-0.5">
+                  {formatNumber(selectedPeriod.farmersCount)}
+                </p>
               </div>
-              <div className="flex justify-between border-b border-dashed border-[var(--hair)] py-2.5">
-                <dt className="font-sans text-[var(--ink-2)]">Loan repayments</dt>
-                <dd>{formatCurrency(slip.loanRepayments)}</dd>
+              <div>
+                <p className="text-xs text-text-muted">Verified leaf</p>
+                <p className="font-semibold text-text-primary mt-0.5">
+                  {formatNumber(selectedPeriod.verifiedKg)} kg
+                </p>
               </div>
-              <div className="flex items-baseline justify-between border-b-[3px] border-double border-[var(--ink)] py-3">
-                <dt className="font-sans">Net pay</dt>
-                <dd className="font-display text-[34px]">{formatCurrency(slip.net)}</dd>
+              <div>
+                <p className="text-xs text-text-muted">Gross (LKR)</p>
+                <p className="font-semibold text-text-primary mt-0.5">
+                  {formatNumber(selectedPeriod.grossLkr)}
+                </p>
               </div>
-            </dl>
-            <div className="mt-6 flex justify-between gap-2">
-              <Button variant="ghost" icon={<Printer size={14} />} onClick={() => window.print()}>
-                Print
-              </Button>
-              <div className="flex gap-2">
-                {slip.status === 'Draft' && (
-                  <Button
-                    onClick={() => {
-                      L.setSettlementStatus([slip.id], 'Approved')
-                      setSlip({ ...slip, status: 'Approved' })
-                      notify('Settlement approved')
-                    }}
-                  >
-                    Approve
-                  </Button>
-                )}
-                {slip.status === 'Approved' && (
-                  <Button
-                    onClick={() => {
-                      L.setSettlementStatus([slip.id], 'Paid')
-                      setSlip({ ...slip, status: 'Paid' })
-                      notify('Settlement paid')
-                    }}
-                  >
-                    Mark paid
-                  </Button>
-                )}
+              <div>
+                <p className="text-xs text-text-muted">Net payable (LKR)</p>
+                <p className="font-bold text-brand-primary mt-0.5">
+                  {formatNumber(selectedPeriod.netPayableLkr)}
+                </p>
               </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setSelectedPeriod(null)}
+                className="px-4 py-2 text-sm font-medium text-text-secondary border border-border-default rounded-lg hover:bg-surface-muted cursor-pointer"
+              >
+                Close
+              </button>
+              {selectedPeriod.status === 'Draft' && (
+                <button
+                  type="button"
+                  disabled={isFinalizing}
+                  onClick={() => handleFinalizePeriod(selectedPeriod)}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-text-on-primary bg-brand-primary rounded-lg hover:bg-brand-primary/90 disabled:opacity-50 cursor-pointer"
+                >
+                  {isFinalizing && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Finalize & mark paid
+                </button>
+              )}
             </div>
           </div>
-        )}
-      </Modal>
-    </>
-  )
-}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SettlementsPage;
